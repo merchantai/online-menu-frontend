@@ -41,6 +41,16 @@ onMounted(() => {
       </div>
       
       <div class="navbar__actions">
+        <a 
+          v-if="menuStore.hotel && menuStore.hotel.phone" 
+          :href="`tel:${(menuStore.hotel.code || '') + menuStore.hotel.phone}`" 
+          class="btn btn--primary btn--call"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" class="icon">
+            <path d="M20.01 15.38c-1.23 0-2.42-.2-3.53-.56a.977.977 0 0 0-1.01.24l-1.57 1.97c-2.83-1.49-5.15-3.8-6.62-6.62l1.97-1.57c.23-.23.31-.56.25-.87-.36-1.11-.56-2.3-.56-3.53a.996.996 0 0 0-1-1H4.05a1 1 0 0 0-1 1c0 9.39 7.61 17 17 17a1 1 0 0 0 1-1v-3.95a.996.996 0 0 0-1-1z"/>
+          </svg>
+          <span class="text">Call to Order</span>
+        </a>
         <button @click="toggleTheme" class="btn btn--icon theme-toggle" :title="isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'">
           {{ isDark ? '☀️' : '🌙' }}
         </button>
@@ -79,6 +89,15 @@ onMounted(() => {
     gap: 0.5rem;
 }
 
+.btn--call {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none;
+    font-size: 0.9rem;
+    padding: 0.5rem 1rem;
+}
+
 .hamburger, .theme-toggle {
     font-size: 1.5rem;
     background: none;
@@ -86,6 +105,19 @@ onMounted(() => {
     cursor: pointer;
     color: var(--text-main);
     padding: 0.5rem;
+}
+
+@media (max-width: 600px) {
+    .btn--call .text {
+        display: none;
+    }
+    .btn--call {
+        padding: 0.5rem;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        justify-content: center;
+    }
 }
 </style>
 
