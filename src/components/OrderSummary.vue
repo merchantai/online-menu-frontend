@@ -1,8 +1,10 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { useCartStore } from '../stores/cart';
+import { useMenuStore } from '../stores/menu';
 
 const cartStore = useCartStore();
+const menuStore = useMenuStore();
 const isOrderOpen = ref(false);
 
 const formattedTotal = computed(() => {
@@ -17,6 +19,26 @@ const formatItemTotal = (item) => {
     style: 'currency',
     currency: 'INR'
   }).format(item.price * item.quantity);
+};
+
+const sendOrderToWhatsapp = () => {
+  if (!menuStore.hotel || !menuStore.hotel.whatsappNumber) {
+    alert("WhatsApp number not configured for this hotel.");
+    return;
+  }
+
+  // Remove non-numeric characters for the API link (wa.me expects just digits including country code)
+  const phone = menuStore.hotel.whatsappNumber.replace(/[^\d]/g, '');
+  let message = `*New Order for ${menuStore.hotel.name}*\n\n`;
+
+  cartStore.items.forEach(item => {
+    message += `${item.quantity} x ${item.name} - ${formatItemTotal(item)}\n`;
+  });
+
+  message += `\n*Total: ${formattedTotal.value}*`;
+
+  const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+  window.open(url, '_blank');
 };
 </script>
 
@@ -66,7 +88,9 @@ const formatItemTotal = (item) => {
 
         <div class="modal__actions">
           <button @click="isOrderOpen = false" class="btn btn--secondary">Keep Ordering</button>
-          <button class="btn btn--primary">Place Order</button>
+          <button @click="sendOrderToWhatsapp" class="btn btn--whatsapp">
+            <span class="icon">💬</span> Order via WhatsApp
+          </button>
         </div>
       </div>
     </div>
@@ -128,5 +152,17 @@ const formatItemTotal = (item) => {
   margin-top: 1rem;
   padding-top: 1rem;
   border-top: 2px solid #eee;
+}
+
+.btn--whatsapp {
+  background-color: #25D366;
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn--whatsapp:hover {
+  background-color: #128C7E;
 }
 </style>
