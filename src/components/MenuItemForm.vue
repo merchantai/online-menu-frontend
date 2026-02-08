@@ -1,5 +1,6 @@
 <script setup>
 import { ref, watch } from 'vue';
+import { compressImage } from '../utils/image';
 
 const props = defineProps({
   item: Object,
@@ -17,6 +18,7 @@ const formData = ref({
 const imageFile = ref(null);
 const imagePreview = ref(null);
 const fileInput = ref(null);
+const isCompressing = ref(false);
 
 watch(() => props.item, (newItem) => {
   if (newItem) {
@@ -33,11 +35,26 @@ watch(() => props.item, (newItem) => {
   }
 }, { immediate: true });
 
-const handleFileChange = (event) => {
+const handleFileChange = async (event) => {
   const file = event.target.files[0];
   if (file) {
-    imageFile.value = file;
-    imagePreview.value = URL.createObjectURL(file);
+    try {
+      isCompressing.value = true;
+      const compressed = await compressImage(file, {
+        maxWidth: 1024,
+        maxHeight: 1024,
+        quality: 0.7
+      });
+      imageFile.value = compressed;
+      imagePreview.value = URL.createObjectURL(compressed);
+    } catch (error) {
+      console.error("Compression failed:", error);
+      // Fallback to original file
+      imageFile.value = file;
+      imagePreview.value = URL.createObjectURL(file);
+    } finally {
+      isCompressing.value = false;
+    }
   }
 };
 
@@ -90,8 +107,21 @@ const handleSubmit = () => {
 
           <!-- File Input -->
           <div class="file-input-wrapper">
-             <span class="text-sm text-muted">OR Upload File (Requires Firebase Storage)</span>
-             <input ref="fileInput" type="file" @change="handleFileChange" accept="image/*" class="form-input mt-1" />
+             <span class="text-sm text-muted">OR Upload File</span>
+             <input 
+               ref="fileInput" 
+               type="file" 
+               @change="handleFileChange" 
+               accept="image/*" 
+               class="form-input mt-1" 
+               :disabled="isCompressing"
+             />
+             <div v-if="isCompressing" class="compression-loader">
+                <span class="spinner">⏳</span> Compressing & Optimizing...
+             </div>
+             <div v-else-if="imageFile" class="text-sm text-success mt-1">
+                ✅ Image optimized (WebP)
+             </div>
           </div>
           
           <!-- Preview -->
@@ -99,13 +129,15 @@ const handleSubmit = () => {
             <div class="image-preview">
                <img :src="imagePreview || formData.image" alt="Preview" @error="$event.target.style.display='none'" />
             </div>
-            <button type="button" @click="removeImage" class="btn btn--small btn--danger mt-2">Remove Image</button>
+            <button type="button" @click="removeImage" class="btn btn--small btn--danger mt-2" :disabled="isCompressing">Remove Image</button>
           </div>
         </div>
 
         <div class="modal__actions">
           <button type="button" @click="$emit('cancel')" class="btn btn--secondary">Cancel</button>
-          <button type="submit" class="btn btn--primary">Save</button>
+          <button type="submit" class="btn btn--primary" :disabled="isCompressing">
+            {{ isCompressing ? 'Processing Image...' : 'Save' }}
+          </button>
         </div>
       </form>
     </div>
@@ -113,5 +145,34 @@ const handleSubmit = () => {
 </template>
 
 <style scoped>
-/* Modal styles will be in global css for simplicity or scoped here */
+.compression-loader {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  color: var(--primary-color);
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.text-success {
+  color: #28a745;
+}
+
+.spinner {
+  display: inline-block;
+  animation: rotate 2s linear infinite;
+}
+
+@keyframes rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.mb-2 { margin-bottom: 0.5rem; }
+.mt-1 { margin-top: 0.25rem; }
+.mt-2 { margin-top: 0.5rem; }
+.text-sm { font-size: 0.875rem; }
+.text-muted { color: var(--text-muted); }
+.text-primary { color: var(--primary-color); }
 </style>
