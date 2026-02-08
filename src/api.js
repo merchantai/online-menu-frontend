@@ -1,4 +1,3 @@
-// api.js
 import { initializeApp } from "firebase/app";
 import {
   getAuth,
@@ -19,27 +18,27 @@ import {
 } from "firebase/firestore";
 import { ref, deleteObject, getStorage, uploadBytes, getDownloadURL } from "firebase/storage";
 
-const storage = getStorage(app);
-
 // ---- CONFIG ----
-// Replace with your Firebase project config
 const firebaseConfig = {
-  apiKey: "FIREBASE_API_KEY",
-  authDomain: "FIREBASE_PROJECT_ID.firebaseapp.com",
-  projectId: "FIREBASE_PROJECT_ID",
-  storageBucket: "FIREBASE_PROJECT_ID.appspot.com",
-  messagingSenderId: "FIREBASE_SENDER_ID",
-  appId: "FIREBASE_APP_ID"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || `${import.meta.env.VITE_FIREBASE_PROJECT_ID}.firebaseapp.com`,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || `${import.meta.env.VITE_FIREBASE_PROJECT_ID}.appspot.com`,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || import.meta.env.VITE_FIREBASE_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
 // ---- INIT ----
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+const storage = getStorage(app); 
 const provider = new GoogleAuthProvider();
 
-let currentUser = null; // store signed-in user
-let hotelData = null; // store hotel info after fetching
+let currentUser = null; 
+let hotelData = null; 
+
+export { auth, db, storage, provider }; 
 
 // ---- AUTH ----
 export async function login() {
@@ -68,13 +67,18 @@ export async function loadHotel(hotelId) {
   const snap = await getDoc(hotelRef);
 
   if (!snap.exists()) throw new Error("Hotel not found");
-  hotelData = snap.data();
-
+  hotelData = { id: snap.id, ...snap.data() };
   return hotelData;
 }
 
 export function isAdmin() {
+    // Optional client-side check if needed for UI elements, 
+    // but we removed the strict check in CRUD to rely on backend rules if preferred.
+    // Keeping it here for reference or UI conditional rendering.
   if (!currentUser || !hotelData) return false;
+  if (Array.isArray(hotelData.ownerEmail)) {
+      return hotelData.ownerEmail.includes(currentUser.email);
+  }
   return currentUser.email === hotelData.ownerEmail;
 }
 
@@ -94,29 +98,29 @@ export async function uploadMenuItemImage(hotelId, file) {
 }
 
 export async function addMenuItem(hotelId, item, file) {
-  if (!isAdmin()) throw new Error("Unauthorized");
   const menuRef = collection(db, "hotels", hotelId, "menu");
   if (file) {
     const imageUrl = await uploadMenuItemImage(hotelId, file);
-    item.image = imageUrl; // Add image URL to item object
+    item.image = imageUrl; 
   }
   const newDoc = await addDoc(menuRef, item);
   return { id: newDoc.id, ...item };
 }
 
-export async function updateMenuItem(hotelId, itemId, updates) {
-  if (!isAdmin()) throw new Error("Unauthorized");
+export async function updateMenuItem(hotelId, itemId, updates, file) {
+  if (file) {
+    const imageUrl = await uploadMenuItemImage(hotelId, file);
+    updates.image = imageUrl;
+  }
+
   const itemRef = doc(db, "hotels", hotelId, "menu", itemId);
   await updateDoc(itemRef, updates);
   return true;
 }
 
 export async function deleteMenuItem(hotelId, itemId) {
-  if (!isAdmin()) throw new Error("Unauthorized");
-
   const itemRef = doc(db, "hotels", hotelId, "menu", itemId);
 
-  // Get the document first to retrieve the image URL
   const snapshot = await getDoc(itemRef);
   if (!snapshot.exists()) {
     throw new Error("Menu item not found");
@@ -130,7 +134,7 @@ export async function deleteMenuItem(hotelId, itemId) {
   // Delete image from storage if present
   if (itemData.image) {
     try {
-      const imageRef = ref(storage, itemData.image); // image field contains the full URL
+      const imageRef = ref(storage, itemData.image); 
       await deleteObject(imageRef);
     } catch (error) {
       console.warn("Failed to delete image from storage:", error);

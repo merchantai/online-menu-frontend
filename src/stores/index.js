@@ -1,4 +1,3 @@
-// src/stores/student.js
 import { defineStore } from "pinia";
 import * as api from "@/api";
 
