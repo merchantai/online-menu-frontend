@@ -25,7 +25,8 @@ const formData = ref({
   description: '',
   image: null,
   cat: [],
-  currency: 'INR'
+  currency: 'INR',
+  quantityType: 'unit'
 });
 
 const categoriesInput = ref('');
@@ -52,7 +53,8 @@ onMounted(async () => {
 const loadItem = (item) => {
   formData.value = { 
     ...item,
-    currency: item.currency || 'INR' 
+    currency: item.currency || 'INR',
+    quantityType: item.quantityType || 'unit'
   };
   categoriesInput.value = Array.isArray(item.cat) ? item.cat.join(', ') : item.cat || '';
   imagePreview.value = item.image;
@@ -133,16 +135,24 @@ const handleSubmit = async () => {
         </div>
 
         <div class="form-row">
-          <div class="form-group flex-1">
-            <label>Price</label>
+          <div class="form-group flex-2">
+            <label>Price per {{ formData.quantityType === 'unit' ? 'item' : formData.quantityType }}</label>
             <input v-model.number="formData.price" type="number" required class="form-input" placeholder="0.00" />
           </div>
-          <div class="form-group">
+          <div class="form-group flex-1">
             <label>Currency</label>
             <select v-model="formData.currency" class="form-input">
               <option v-for="c in currencies" :key="c.code" :value="c.code">
                 {{ c.code }} ({{ c.symbol }})
               </option>
+            </select>
+          </div>
+          <div class="form-group flex-1">
+            <label>Quantity Type</label>
+            <select v-model="formData.quantityType" class="form-input">
+              <option value="unit">Unit (Default)</option>
+              <option value="g">Grams (g)</option>
+              <option value="kg">Kilograms (kg)</option>
             </select>
           </div>
         </div>
@@ -237,6 +247,7 @@ const handleSubmit = async () => {
 }
 
 .flex-1 { flex: 1; }
+.flex-2 { flex: 2; }
 
 .form-actions {
   display: flex;

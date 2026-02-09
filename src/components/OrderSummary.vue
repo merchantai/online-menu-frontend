@@ -44,12 +44,12 @@ const sendOrderToWhatsapp = () => {
     return;
   }
 
-  // Remove non-numeric characters for the API link (wa.me expects just digits including country code)
   const phone = menuStore.hotel.whatsappNumber.replace(/[^\d]/g, '');
   let message = `*New Order for ${menuStore.hotel.name}*\n\n`;
 
   cartStore.items.forEach(item => {
-    message += `${item.quantity} x ${item.name} - ${formatItemTotal(item)}\n`;
+    const unit = item.quantityType && item.quantityType !== 'unit' ? item.quantityType : '';
+    message += `${item.quantity}${unit} x ${item.name} - ${formatItemTotal(item)}\n`;
   });
 
   message += `\n*Total: ${formattedTotal.value}*`;
@@ -83,12 +83,14 @@ const sendOrderToWhatsapp = () => {
         <div class="order-list">
           <div v-for="item in cartStore.items" :key="item.id" class="order-item">
             <div class="order-item__info">
-              <span class="order-item__name">{{ item.name }}</span>
-              <span class="order-item__price-unit">@ {{ item.price }}</span>
+              <span class="order-item__name">
+                {{ item.quantity }}{{ item.quantityType && item.quantityType !== 'unit' ? item.quantityType : '' }} x {{ item.name }}
+              </span>
+              <span class="order-item__price-unit">@ {{ item.price }} / {{ item.quantityType || 'unit' }}</span>
             </div>
             
             <div class="order-item__actions">
-              <div class="quantity-control-group small">
+              <div v-if="item.quantityType === 'unit' || !item.quantityType" class="quantity-control-group small">
                 <button @click="cartStore.removeItem(item.id)" class="btn-quantity">-</button>
                 <span class="quantity-display">{{ item.quantity }}</span>
                 <button @click="cartStore.addItem(item)" class="btn-quantity">+</button>
