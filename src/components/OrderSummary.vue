@@ -7,17 +7,34 @@ const cartStore = useCartStore();
 const menuStore = useMenuStore();
 const isOrderOpen = ref(false);
 
+const getLocales = (currency) => {
+  const map = {
+    'INR': 'en-IN',
+    'USD': 'en-US',
+    'EUR': 'de-DE',
+    'GBP': 'en-GB',
+    'JPY': 'ja-JP'
+  };
+  return map[currency] || 'en-IN';
+};
+
 const formattedTotal = computed(() => {
-  return new Intl.NumberFormat('en-IN', {
+  // Use currency from the first item if available, otherwise INR
+  const primaryCurrency = cartStore.items.length > 0 ? (cartStore.items[0].currency || 'INR') : 'INR';
+  
+  return new Intl.NumberFormat(getLocales(primaryCurrency), {
     style: 'currency',
-    currency: 'INR'
+    currency: primaryCurrency,
+    currencyDisplay: 'symbol'
   }).format(cartStore.totalPrice);
 });
 
 const formatItemTotal = (item) => {
-  return new Intl.NumberFormat('en-IN', {
+  const currency = item.currency || 'INR';
+  return new Intl.NumberFormat(getLocales(currency), {
     style: 'currency',
-    currency: 'INR'
+    currency: currency,
+    currencyDisplay: 'symbol'
   }).format(item.price * item.quantity);
 };
 

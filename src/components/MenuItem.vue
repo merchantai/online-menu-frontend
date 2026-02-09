@@ -15,9 +15,19 @@ const menuStore = useMenuStore();
 const cartStore = useCartStore();
 
 const formattedPrice = computed(() => {
-  return new Intl.NumberFormat('en-IN', {
+  const currency = props.item.currency || 'INR';
+  const locales = {
+    'INR': 'en-IN',
+    'USD': 'en-US',
+    'EUR': 'de-DE',
+    'GBP': 'en-GB',
+    'JPY': 'ja-JP'
+  };
+  
+  return new Intl.NumberFormat(locales[currency] || 'en-IN', {
     style: 'currency',
-    currency: 'INR'
+    currency: currency,
+    currencyDisplay: 'symbol'
   }).format(props.item.price);
 });
 
