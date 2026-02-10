@@ -1,6 +1,8 @@
 <script setup>
+import { computed } from 'vue';
 import { useUserStore } from "../stores/user";
 import { useMenuStore } from "../stores/menu";
+import { getDiscoveryUrl } from "../utils/domain";
 
 const props = defineProps({
   isOpen: Boolean
@@ -10,6 +12,8 @@ const emit = defineEmits(['close']);
 
 const userStore = useUserStore();
 const menuStore = useMenuStore();
+
+const discoveryUrl = computed(() => getDiscoveryUrl());
 
 const handleLogin = () => {
   userStore.login();
@@ -33,16 +37,44 @@ const handleLogout = () => {
 
       <div class="side-menu__content">
         <nav class="side-nav">
-          <router-link to="/" class="nav-item" @click="$emit('close')">Home</router-link>
-          <router-link to="/about" class="nav-item" @click="$emit('close')">About Hotel</router-link>
+          <!-- Always show Discovery Home for easy navigation back to platform -->
+          <a :href="discoveryUrl" class="nav-item" @click="$emit('close')">
+            <span class="icon">🔍</span> Discovery Home
+          </a>
+          
+          <!-- Shop Context Links (Only shown if a shop is active) -->
+          <router-link v-if="menuStore.hotel" :to="{ name: 'home' }" class="nav-item" exact-active-class="router-link-exact-active" @click="$emit('close')">
+            <span class="icon">🍴</span> Shop Menu
+          </router-link>
+
+          <router-link v-if="menuStore.hotel" to="/about" class="nav-item" @click="$emit('close')">
+            <span class="icon">ℹ️</span> About Shop
+          </router-link>
+
+          <!-- Platform Links (Always Visible) -->
+          <div class="nav-divider"></div>
+          
+          <router-link to="/join" class="nav-item" @click="$emit('close')">
+            <span class="icon">🏪</span> Join MerchantAI
+          </router-link>
+
+          <router-link to="/terms" class="nav-item" @click="$emit('close')">
+            <span class="icon">📜</span> Terms of Service
+          </router-link>
+
+          <router-link to="/privacy" class="nav-item" @click="$emit('close')">
+            <span class="icon">🛡️</span> Privacy Policy
+          </router-link>
         </nav>
 
         <div class="side-menu__footer">
           <div v-if="userStore.user" class="user-info">
             <span class="user-email">{{ userStore.user.email }}</span>
-            <button @click="handleLogout" class="btn btn--secondary btn--full">Logout</button>
+            <button v-if="menuStore.hotel" @click="handleLogout" class="btn btn--secondary btn--full">Logout</button>
+            <button v-else @click="handleLogout" class="btn btn--secondary btn--full">Logout Admin</button>
           </div>
-          <button v-else @click="handleLogin" class="btn btn--primary btn--full">Login as Owner</button>
+          <button v-else-if="menuStore.hotel" @click="handleLogin" class="btn btn--primary btn--full">Login as Owner</button>
+          <button v-else @click="handleLogin" class="btn btn--primary btn--full">Admin Login</button>
         </div>
       </div>
     </aside>
@@ -108,14 +140,34 @@ const handleLogout = () => {
   gap: 1rem;
 }
 
+.nav-divider {
+  height: 1px;
+  background: var(--border-color);
+  margin: 1rem 0;
+}
+
 .nav-item {
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-weight: 500;
   color: var(--text-main);
   text-decoration: none;
   padding: 0.75rem 1rem;
   border-radius: 8px;
   transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.nav-item--highlight {
+  background: color-mix(in srgb, var(--primary-color), transparent 92%);
+  color: var(--primary-color);
+}
+
+.icon {
+  font-size: 1.2rem;
+  width: 24px;
+  text-align: center;
 }
 
 .nav-item:hover {
@@ -123,10 +175,22 @@ const handleLogout = () => {
   color: var(--primary-color);
 }
 
-.router-link-active {
-  color: var(--primary-color);
+.router-link-active:not(.router-link-exact-active) {
+  background-color: transparent;
+  color: var(--text-main);
+  font-weight: 500;
+}
+
+.router-link-exact-active {
+  color: var(--primary-color) !important;
   font-weight: 700;
-  background-color: color-mix(in srgb, var(--primary-color), transparent 90%);
+  background-color: color-mix(in srgb, var(--primary-color), transparent 90%) !important;
+}
+
+/* Ensure sub-paths don't highlight the parent implicitly in a way that looks messy */
+.nav-item:not(.router-link-exact-active) {
+  background-color: transparent;
+  font-weight: 500;
 }
 
 .side-menu__footer {

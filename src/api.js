@@ -62,6 +62,12 @@ export function watchAuthState(callback) {
 }
 
 // ---- HOTEL + MENU ----
+export async function getAllHotels() {
+  const hotelsRef = collection(db, "hotels");
+  const snap = await getDocs(hotelsRef);
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+
 export async function loadHotel(hotelId) {
   const hotelRef = doc(db, "hotels", hotelId);
   const snap = await getDoc(hotelRef);

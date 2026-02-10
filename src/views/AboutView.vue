@@ -25,6 +25,13 @@ const menuStore = useMenuStore();
                 ✉️ {{ Array.isArray(menuStore.hotel.ownerEmail) ? menuStore.hotel.ownerEmail[0] : menuStore.hotel.ownerEmail }}
             </p>
         </div>
+
+        <div v-if="menuStore.hotel.mapLocation" class="info-group">
+            <h3>Location</h3>
+            <a :href="menuStore.hotel.mapLocation" target="_blank" rel="noopener noreferrer" class="btn btn--secondary map-link">
+                📍 View on Google Maps
+            </a>
+        </div>
       </div>
     </div>
     <div v-else class="loading">Loading details...</div>
@@ -79,5 +86,20 @@ const menuStore = useMenuStore();
     font-size: 1.1rem;
     color: var(--text-main);
     line-height: 1.5;
+}
+
+.map-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    text-decoration: none;
+    font-weight: 600;
+    transition: transform 0.2s;
+}
+
+.map-link:hover {
+    transform: translateY(-2px);
 }
 </style>

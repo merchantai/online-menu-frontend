@@ -36,7 +36,7 @@ onMounted(() => {
                 <img v-if="menuStore.hotel.logo" :src="menuStore.hotel.logo" :alt="menuStore.hotel.name" class="navbar__logo" />
                 <h1 v-else>{{ menuStore.hotel.name }}</h1>
             </div>
-            <h1 v-else>Loading...</h1>
+            <h1 v-else>MerchantAI</h1>
         </router-link>
       </div>
       

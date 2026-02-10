@@ -15,6 +15,23 @@ const routes = [
     component: AboutView
   },
   {
+    path: '/join',
+    name: 'join',
+    component: () => import('../views/JoinView.vue')
+  },
+  {
+    path: '/terms',
+    name: 'terms',
+    component: () => import('../views/LegalView.vue'),
+    props: { type: 'terms' }
+  },
+  {
+    path: '/privacy',
+    name: 'privacy',
+    component: () => import('../views/LegalView.vue'),
+    props: { type: 'privacy' }
+  },
+  {
     path: '/manage/add',
     name: 'add-item',
     component: ManageItemView

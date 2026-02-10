@@ -107,7 +107,7 @@ const sendOrderToWhatsapp = () => {
 
         <div class="modal__actions">
           <button @click="isOrderOpen = false" class="btn btn--secondary">Keep Ordering</button>
-          <button @click="sendOrderToWhatsapp" class="btn btn--whatsapp">
+          <button v-if="menuStore.hotel?.whatsappNumber" @click="sendOrderToWhatsapp" class="btn btn--whatsapp">
             <span class="icon">💬</span> Order via WhatsApp
           </button>
         </div>
