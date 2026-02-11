@@ -9,21 +9,26 @@ const loading = computed(() => menuStore.loading);
 const searchQuery = ref('');
 const selectedCategory = ref('');
 const selectedLocation = ref('');
-const collapsedCategories = ref(new Set());
+const collapsedCategories = ref({}); // Use object for better reactivity tracking in templates
 const isRegistrationModalOpen = ref(false);
 
 onMounted(async () => {
   await menuStore.fetchAllHotels();
 });
 
+// Helper to normalize store categories
+const getStoreCats = (store) => {
+  let cats = store.cat || [];
+  if (typeof cats === 'string') {
+    cats = cats.split(',').map(c => c.trim()).filter(c => c !== '');
+  }
+  return Array.isArray(cats) ? cats : [];
+};
+
 const availableCategories = computed(() => {
   const cats = new Set();
   stores.value.forEach(store => {
-    let storeCats = store.cat || [];
-    if (typeof storeCats === 'string') {
-      storeCats = storeCats.split(',').map(c => c.trim()).filter(c => c !== '');
-    }
-    storeCats.forEach(c => cats.add(c));
+    getStoreCats(store).forEach(c => cats.add(c));
   });
   return Array.from(cats).sort();
 });
@@ -31,23 +36,24 @@ const availableCategories = computed(() => {
 const availableLocations = computed(() => {
   const locs = new Set();
   stores.value.forEach(store => {
-    if (store.city) locs.add(store.city);
+    if (store.city) locs.add(store.city.trim());
   });
   return Array.from(locs).sort();
 });
 
 const filteredStores = computed(() => {
+  const query = searchQuery.value.toLowerCase().trim();
+  const catFilter = selectedCategory.value;
+  const locFilter = selectedLocation.value;
+
   return stores.value.filter(store => {
-    const matchesName = !searchQuery.value || store.name.toLowerCase().includes(searchQuery.value.toLowerCase());
+    const matchesName = !query || store.name.toLowerCase().includes(query);
     
-    // Check categories
-    let storeCats = store.cat || [];
-    if (typeof storeCats === 'string') {
-      storeCats = storeCats.split(',').map(c => c.trim()).filter(c => c !== '');
-    }
-    const matchesCategory = !selectedCategory.value || storeCats.includes(selectedCategory.value);
+    const storeCats = getStoreCats(store);
+    const matchesCategory = !catFilter || storeCats.includes(catFilter);
     
-    const matchesLocation = !selectedLocation.value || store.city === selectedLocation.value;
+    const storeCity = (store.city || '').trim();
+    const matchesLocation = !locFilter || storeCity === locFilter;
     
     return matchesName && matchesCategory && matchesLocation;
   });
@@ -57,15 +63,8 @@ const categorizedStores = computed(() => {
   const categories = {};
   
   filteredStores.value.forEach(store => {
-    // Robust to array or string or missing 'cat'
-    let storeCats = store.cat || [];
-    if (typeof storeCats === 'string') {
-      storeCats = storeCats.split(',').map(c => c.trim()).filter(c => c !== '');
-    }
-    
-    const finalCats = Array.isArray(storeCats) && storeCats.length > 0 
-      ? storeCats 
-      : ['General'];
+    const storeCats = getStoreCats(store);
+    const finalCats = storeCats.length > 0 ? storeCats : ['Uncategorized'];
       
     finalCats.forEach(cat => {
       if (!categories[cat]) {
@@ -75,18 +74,18 @@ const categorizedStores = computed(() => {
     });
   });
   
-  return Object.keys(categories).sort().map(name => ({
+  return Object.keys(categories).sort((a, b) => {
+    if (a === 'Uncategorized') return 1;
+    if (b === 'Uncategorized') return -1;
+    return a.localeCompare(b);
+  }).map(name => ({
     name,
     items: categories[name]
   }));
 });
 
 const toggleCategory = (categoryName) => {
-  if (collapsedCategories.value.has(categoryName)) {
-    collapsedCategories.value.delete(categoryName);
-  } else {
-    collapsedCategories.value.add(categoryName);
-  }
+  collapsedCategories.value[categoryName] = !collapsedCategories.value[categoryName];
 };
 
 // Admin Contact Logic
@@ -157,10 +156,10 @@ const contactViaEmail = () => {
         <div v-for="category in categorizedStores" :key="category.name" class="category-section">
           <div class="category-header" @click="toggleCategory(category.name)">
             <h3>{{ category.name }}</h3>
-            <span class="chevron" :class="{ 'collapsed': collapsedCategories.has(category.name) }">▼</span>
+            <span class="chevron" :class="{ 'collapsed': collapsedCategories[category.name] }">▼</span>
           </div>
 
-          <div v-show="!collapsedCategories.has(category.name)" class="store-grid">
+          <div v-show="!collapsedCategories[category.name]" class="store-grid">
             <a v-for="store in category.items" 
                :key="store.id" 
                :href="getStoreUrl(store.id)" 
