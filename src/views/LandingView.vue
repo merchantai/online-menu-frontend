@@ -7,6 +7,8 @@ const menuStore = useMenuStore();
 const stores = computed(() => menuStore.allHotels);
 const loading = computed(() => menuStore.loading);
 const searchQuery = ref('');
+const selectedCategory = ref('');
+const selectedLocation = ref('');
 const collapsedCategories = ref(new Set());
 const isRegistrationModalOpen = ref(false);
 
@@ -14,14 +16,41 @@ onMounted(async () => {
   await menuStore.fetchAllHotels();
 });
 
+const availableCategories = computed(() => {
+  const cats = new Set();
+  stores.value.forEach(store => {
+    let storeCats = store.cat || [];
+    if (typeof storeCats === 'string') {
+      storeCats = storeCats.split(',').map(c => c.trim()).filter(c => c !== '');
+    }
+    storeCats.forEach(c => cats.add(c));
+  });
+  return Array.from(cats).sort();
+});
+
+const availableLocations = computed(() => {
+  const locs = new Set();
+  stores.value.forEach(store => {
+    if (store.city) locs.add(store.city);
+  });
+  return Array.from(locs).sort();
+});
+
 const filteredStores = computed(() => {
-  if (!searchQuery.value) return stores.value;
-  const query = searchQuery.value.toLowerCase();
-  return stores.value.filter(store => 
-    store.name.toLowerCase().includes(query) || 
-    (store.city && store.city.toLowerCase().includes(query)) ||
-    (store.address && store.address.toLowerCase().includes(query))
-  );
+  return stores.value.filter(store => {
+    const matchesName = !searchQuery.value || store.name.toLowerCase().includes(searchQuery.value.toLowerCase());
+    
+    // Check categories
+    let storeCats = store.cat || [];
+    if (typeof storeCats === 'string') {
+      storeCats = storeCats.split(',').map(c => c.trim()).filter(c => c !== '');
+    }
+    const matchesCategory = !selectedCategory.value || storeCats.includes(selectedCategory.value);
+    
+    const matchesLocation = !selectedLocation.value || store.city === selectedLocation.value;
+    
+    return matchesName && matchesCategory && matchesLocation;
+  });
 });
 
 const categorizedStores = computed(() => {
@@ -67,13 +96,13 @@ const adminWhatsapp = import.meta.env.VITE_ADMIN_WHATSAPP;
 const contactViaWhatsapp = () => {
   if (!adminWhatsapp) return;
   const phone = adminWhatsapp.replace(/[^\d]/g, '');
-  const message = encodeURIComponent("Hello! I'm interested in adding my shop to MerchantAI.");
+  const message = encodeURIComponent("Hello! I'm interested in adding my shop to Pro Menu.");
   window.open(`https://wa.me/${phone}?text=${message}`, '_blank');
 };
 
 const contactViaEmail = () => {
   if (!adminEmail) return;
-  const subject = encodeURIComponent("Inquiry: Registering my shop on MerchantAI");
+  const subject = encodeURIComponent("Inquiry: Registering my shop on Pro Menu");
   const body = encodeURIComponent("Hello,\n\nI would like to know more about listing my shop on your platform.");
   window.location.href = `mailto:${adminEmail}?subject=${subject}&body=${body}`;
 };
@@ -83,18 +112,40 @@ const contactViaEmail = () => {
   <div class="landing-page">
     <div class="container--narrow">
       <header class="landing-header">
-        <h1>MerchantAI</h1>
+        <h1>Pro Menu</h1>
         <p>Your portal to local shopping & dining</p>
       </header>
 
-      <div class="search-section card">
+      <div class="search-container card">
         <div class="search-bar">
           <span class="search-icon">🔍</span>
           <input 
             v-model="searchQuery" 
-            placeholder="Search shops by name or city..." 
+            placeholder="Search shops..." 
             class="search-input"
           />
+        </div>
+        
+        <div class="search-divider"></div>
+
+        <div class="search-filter">
+          <select v-model="selectedCategory" class="filter-select">
+            <option value="">All Categories</option>
+            <option v-for="cat in availableCategories" :key="cat" :value="cat">
+              {{ cat }}
+            </option>
+          </select>
+        </div>
+
+        <div class="search-divider"></div>
+
+        <div class="search-filter">
+          <select v-model="selectedLocation" class="filter-select">
+            <option value="">All Locations</option>
+            <option v-for="loc in availableLocations" :key="loc" :value="loc">
+              {{ loc }}
+            </option>
+          </select>
         </div>
       </div>
 
@@ -156,7 +207,7 @@ const contactViaEmail = () => {
           </div>
           
           <div class="modal-content">
-            <p>Join MerchantAI and take your restaurant or grocery store online today!</p>
+            <p>Join Pro Menu and take your restaurant or grocery store online today!</p>
             
             <div class="registration-actions">
               <button v-if="adminWhatsapp" @click="contactViaWhatsapp" class="btn btn--whatsapp">
@@ -193,32 +244,91 @@ const contactViaEmail = () => {
   letter-spacing: -1px;
 }
 
-.search-section {
-  padding: 0.75rem;
-  margin-bottom: 2rem;
+.search-container {
+  display: flex;
+  align-items: center;
+  background: var(--bg-card);
+  border-radius: 50px;
+  padding: 0.25rem 0.5rem;
+  margin-bottom: 2.5rem;
+  border: 1px solid var(--border-color);
   box-shadow: var(--shadow-sm);
 }
 
 .search-bar {
+  flex: 2;
+  display: flex;
+  align-items: center;
   position: relative;
+  padding: 0 0.75rem;
 }
 
 .search-icon {
-  position: absolute;
-  left: 12px;
-  top: 50%;
-  transform: translateY(-50%);
   color: var(--text-muted);
+  font-size: 0.9rem;
+  margin-right: 0.5rem;
 }
 
 .search-input {
   width: 100%;
-  padding: 0.75rem 1rem 0.75rem 2.5rem;
-  border: 1px solid var(--border-color);
-  border-radius: 50px;
-  background: var(--bg-body);
+  border: none;
+  background: transparent;
+  padding: 0.6rem 0;
+  font-size: 0.95rem;
   color: var(--text-main);
-  font-size: 1rem;
+  outline: none;
+}
+
+.search-divider {
+  width: 1px;
+  height: 20px;
+  background: var(--border-color);
+  margin: 0 0.5rem;
+}
+
+.search-filter {
+  flex: 1;
+  min-width: 120px;
+}
+
+.filter-select {
+  width: 100%;
+  border: none;
+  background: transparent;
+  padding: 0.6rem 1.5rem 0.6rem 0.5rem;
+  font-size: 0.9rem;
+  color: var(--text-main);
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 0.25rem center;
+  background-size: 0.8em;
+}
+
+@media (max-width: 768px) {
+  .search-container {
+    flex-direction: column;
+    align-items: stretch;
+    border-radius: var(--radius);
+    padding: 0.5rem;
+    gap: 0.5rem;
+  }
+
+  .search-divider {
+    width: 100%;
+    height: 1px;
+    margin: 0;
+  }
+
+  .search-filter {
+    min-width: unset;
+  }
+  
+  .search-bar {
+    padding: 0.5rem 0.75rem;
+  }
 }
 
 .category-section {

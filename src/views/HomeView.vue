@@ -6,8 +6,11 @@ import MenuItem from '../components/MenuItem.vue';
 import OrderSummary from '../components/OrderSummary.vue';
 import ItemDrawer from '../components/ItemDrawer.vue';
 
+import { getDiscoveryUrl } from '../utils/domain';
+
 const menuStore = useMenuStore();
 const router = useRouter();
+const discoveryUrl = getDiscoveryUrl();
 
 // UI State
 const selectedItem = ref(null);
@@ -92,7 +95,14 @@ const handleDelete = async (itemId) => {
 <template>
   <div class="home-view">
     <div v-if="menuStore.loading" class="loading-state">Loading menu...</div>
-    <div v-else-if="menuStore.error" class="error-state">{{ menuStore.error }}</div>
+    <div v-else-if="menuStore.error" class="error-state">
+      <div class="error-card">
+        <span class="error-icon">❌</span>
+        <h2>Store Not Found</h2>
+        <p>{{ menuStore.error }}</p>
+        <a :href="discoveryUrl" class="btn btn--primary">Back to Discovery</a>
+      </div>
+    </div>
     
     <div v-else class="menu-container">
       <!-- Search and Admin Controls -->
@@ -154,16 +164,36 @@ const handleDelete = async (itemId) => {
 
 <style scoped>
 .loading-state,
-.error-state,
-.empty-state {
+.error-state {
   text-align: center;
-  padding: 3rem;
-  font-size: 1.2rem;
-  color: var(--text-muted);
+  padding: 4rem 1rem;
+  display: flex;
+  justify-content: center;
 }
 
-.error-state {
-  color: var(--danger-color);
+.error-card {
+  background: var(--bg-card);
+  padding: 3rem 2rem;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-md);
+  max-width: 400px;
+  width: 100%;
+}
+
+.error-icon {
+  font-size: 3rem;
+  display: block;
+  margin-bottom: 1rem;
+}
+
+.error-card h2 {
+  margin-bottom: 0.5rem;
+  color: var(--text-main);
+}
+
+.error-card p {
+  color: var(--text-muted);
+  margin-bottom: 2rem;
 }
 
 .menu-container {

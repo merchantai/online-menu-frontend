@@ -55,7 +55,7 @@ const handleLogout = () => {
           <div class="nav-divider"></div>
           
           <router-link to="/join" class="nav-item" @click="$emit('close')">
-            <span class="icon">🏪</span> Join MerchantAI
+            <span class="icon">🚀</span> Join Pro Menu
           </router-link>
 
           <router-link to="/terms" class="nav-item" @click="$emit('close')">

@@ -26,17 +26,17 @@ const lastUpdated = "February 10, 2026";
         <div v-if="isTerms" class="legal-text">
           <section>
             <h2>1. Introduction</h2>
-            <p>Welcome to MerchantAI. This platform is a digital catalog hosting service. By using this website, you agree to these terms.</p>
+            <p>Welcome to Pro Menu. This platform is a digital catalog hosting service. By using this website, you agree to these terms.</p>
           </section>
 
           <section>
             <h2>2. Nature of Service</h2>
-            <p>MerchantAI is a platform that allows shop owners to list their products and menus. We are <strong>NOT</strong> a marketplace, a delivery service, or an intermediary for payments. Any transaction between a user and a shop owner is strictly private and external to this platform.</p>
+            <p>Pro Menu is a platform that allows shop owners to list their products and menus. We are <strong>NOT</strong> a marketplace, a delivery service, or an intermediary for payments. Any transaction between a user and a shop owner is strictly private and external to this platform.</p>
           </section>
 
           <section>
             <h2>3. Limitation of Liability</h2>
-            <p>MerchantAI does not take any responsibility for the accuracy of the menus, prices, availability, or quality of products listed by shop owners. The shop owners are solely responsible for the content they provide. We are not liable for any actions, disputes, or damages arising from your interaction with any shop listed here.</p>
+            <p>Pro Menu does not take any responsibility for the accuracy of the menus, prices, availability, or quality of products listed by shop owners. The shop owners are solely responsible for the content they provide. We are not liable for any actions, disputes, or damages arising from your interaction with any shop listed here.</p>
           </section>
 
           <section>

@@ -8,13 +8,13 @@ const adminWhatsapp = import.meta.env.VITE_ADMIN_WHATSAPP;
 const contactViaWhatsapp = () => {
   if (!adminWhatsapp) return;
   const phone = adminWhatsapp.replace(/[^\d]/g, '');
-  const message = encodeURIComponent("Hello! I'm interested in adding my shop to MerchantAI.");
+  const message = encodeURIComponent("Hello! I'm interested in adding my shop to Pro Menu.");
   window.open(`https://wa.me/${phone}?text=${message}`, '_blank');
 };
 
 const contactViaEmail = () => {
   if (!adminEmail) return;
-  const subject = encodeURIComponent("Inquiry: Registering my shop on MerchantAI");
+  const subject = encodeURIComponent("Inquiry: Registering my shop on Pro Menu");
   const body = encodeURIComponent("Hello,\n\nI would like to know more about listing my shop on your platform.");
   window.location.href = `mailto:${adminEmail}?subject=${subject}&body=${body}`;
 };
@@ -26,7 +26,7 @@ const contactViaEmail = () => {
       <div class="join-content card">
         <header class="join-header">
             <span class="icon-brand">🏪</span>
-            <h1>Join MerchantAI</h1>
+            <h1>Join Pro Menu</h1>
             <p class="subtitle">Take your business online in minutes</p>
         </header>
 
