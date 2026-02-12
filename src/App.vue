@@ -5,29 +5,38 @@ import { useMenuStore } from './stores/menu';
 import { getStoreId } from './utils/domain';
 import NavBar from './components/NavBar.vue';
 import SideMenu from './components/SideMenu.vue';
-import LandingView from './views/LandingView.vue';
 
 const menuStore = useMenuStore();
 const route = useRoute();
-
-// UI State
 const isSideMenuOpen = ref(false);
-const isStoreActive = ref(false);
 
-onMounted(async () => {
+const initStore = async (storeId) => {
+  // If we're on a platform page or ID is missing, clear the store
+  if (!storeId) {
+    menuStore.hotel = null;
+    menuStore.menuItems = [];
+    return;
+  }
+  
+  // Don't re-fetch if we're already viewing this hotel
+  if (menuStore.hotel?.id === storeId) return;
+
   try {
-    const storeId = getStoreId();
-    if (storeId) {
-      isStoreActive.value = true;
-      await menuStore.fetchHotelAndMenu(storeId);
-    } else {
-      isStoreActive.value = false;
-    }
+    await menuStore.fetchHotelAndMenu(storeId);
   } catch (error) {
     console.error("Initialization error:", error);
-    isStoreActive.value = false;
   }
-});
+};
+
+// React to route changes
+import { watch } from 'vue';
+watch(
+  () => route.params.hotelId,
+  (newId) => {
+    initStore(newId);
+  },
+  { immediate: true } // Handles both initial load and subsequent changes
+);
 </script>
 
 <template>
@@ -35,16 +44,7 @@ onMounted(async () => {
     <NavBar @open-menu="isSideMenuOpen = true" />
 
     <main class="main-content">
-      <router-view v-slot="{ Component }">
-        <transition name="fade" mode="out-in">
-          <div :key="route.fullPath">
-            <template v-if="!isStoreActive && route.path === '/'">
-              <LandingView />
-            </template>
-            <component :is="Component" v-else />
-          </div>
-        </transition>
-      </router-view>
+      <router-view :key="route.path" />
     </main>
 
     <SideMenu 

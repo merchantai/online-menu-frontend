@@ -1,36 +1,38 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
-import AboutView from '../views/AboutView.vue'
-import ManageItemView from '../views/ManageItemView.vue'
+import LandingView from '../views/LandingView.vue'
+
+const AboutView = () => import('../views/AboutView.vue')
+const ManageItemView = () => import('../views/ManageItemView.vue')
+const JoinView = () => import('../views/JoinView.vue')
+const LegalView = () => import('../views/LegalView.vue')
 
 const routes = [
+  // Platform Routes
   {
     path: '/',
-    name: 'home',
-    component: HomeView
-  },
-  {
-    path: '/about',
-    name: 'about',
-    component: AboutView
+    name: 'discovery',
+    component: LandingView
   },
   {
     path: '/join',
     name: 'join',
-    component: () => import('../views/JoinView.vue')
+    component: JoinView
   },
   {
     path: '/terms',
     name: 'terms',
-    component: () => import('../views/LegalView.vue'),
+    component: LegalView,
     props: { type: 'terms' }
   },
   {
     path: '/privacy',
     name: 'privacy',
-    component: () => import('../views/LegalView.vue'),
+    component: LegalView,
     props: { type: 'privacy' }
   },
+  
+  // Management Routes (Platform Level)
   {
     path: '/manage/add',
     name: 'add-item',
@@ -41,6 +43,18 @@ const routes = [
     name: 'edit-item',
     component: ManageItemView,
     props: true
+  },
+
+  // Shop Routes (ID in path)
+  {
+    path: '/:hotelId',
+    name: 'home',
+    component: HomeView
+  },
+  {
+    path: '/:hotelId/about',
+    name: 'about',
+    component: AboutView
   }
 ]
 ;

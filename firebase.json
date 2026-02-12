@@ -1,5 +1,6 @@
 {
   "hosting": {
+    "site": "online-menu-389e8",
     "public": "dist",
     "ignore": [
       "firebase.json",

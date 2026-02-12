@@ -54,7 +54,7 @@ onMounted(() => {
         <button @click="toggleTheme" class="btn btn--icon theme-toggle" :title="isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'">
           {{ isDark ? '☀️' : '🌙' }}
         </button>
-        <button @click="$emit('open-menu')" class="btn btn--icon hamburger">
+        <button @click="emit('open-menu')" class="btn btn--icon hamburger">
           ☰
         </button>
       </div>

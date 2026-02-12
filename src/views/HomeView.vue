@@ -15,7 +15,7 @@ const discoveryUrl = getDiscoveryUrl();
 // UI State
 const selectedItem = ref(null);
 const searchQuery = ref('');
-const collapsedCategories = ref(new Set());
+const collapsedCategories = ref({});
 
 // Search and Filter Logic
 const filteredMenuItems = computed(() => {
@@ -64,14 +64,8 @@ const categorizedMenu = computed(() => {
 });
 
 const toggleCategory = (categoryName) => {
-  if (collapsedCategories.value.has(categoryName)) {
-    collapsedCategories.value.delete(categoryName);
-  } else {
-    collapsedCategories.value.add(categoryName);
-  }
+  collapsedCategories.value[categoryName] = !collapsedCategories.value[categoryName];
 };
-
-// ... (search/categorization logic remains the same)
 
 const openAddPage = () => {
   router.push('/manage/add');
@@ -127,11 +121,11 @@ const handleDelete = async (itemId) => {
           @click="toggleCategory(category.name)"
         >
           <h3>{{ category.name }} ({{ category.items.length }})</h3>
-          <span class="chevron" :class="{ 'collapsed': collapsedCategories.has(category.name) }">▼</span>
+          <span class="chevron" :class="{ 'collapsed': collapsedCategories[category.name] }">▼</span>
         </div>
         
         <div 
-          v-show="!collapsedCategories.has(category.name)" 
+          v-show="!collapsedCategories[category.name]" 
           class="menu-grid"
         >
           <MenuItem 
