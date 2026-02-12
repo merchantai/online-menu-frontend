@@ -11,7 +11,7 @@ const props = defineProps({
 
 const isTerms = computed(() => props.type === 'terms');
 
-const lastUpdated = "February 10, 2026";
+const lastUpdated = "February 12, 2026";
 </script>
 
 <template>
@@ -36,39 +36,50 @@ const lastUpdated = "February 10, 2026";
 
           <section>
             <h2>3. Limitation of Liability</h2>
-            <p>Pro Menu does not take any responsibility for the accuracy of the menus, prices, availability, or quality of products listed by shop owners. The shop owners are solely responsible for the content they provide. We are not liable for any actions, disputes, or damages arising from your interaction with any shop listed here.</p>
+            <p>To the maximum extent permitted by law, Pro Menu and its operators shall not be liable for any direct, indirect, incidental, or consequential damages. This includes, but is not limited to, damages for loss of profits, goodwill, use, data, or other intangible losses. Specifically, we are not responsible for:</p>
+            <ul>
+              <li>The accuracy of store content, prices, or product quality.</li>
+              <li>Any unauthorized access to or use of our servers and/or any personal information stored therein (e.g., data leaks or breaches).</li>
+              <li>Any technical failures, interruptions of service, or bugs.</li>
+              <li>Disputes or transactions arising between users and listed shop owners.</li>
+            </ul>
           </section>
 
           <section>
             <h2>4. User Conduct</h2>
-            <p>Users must not attempt to disrupt the service or use the platform for any illegal activities.</p>
+            <p>Users must not attempt to disrupt the service, circumvent security features, or use the platform for any illegal activities.</p>
           </section>
 
           <section>
             <h2>5. Disclaimer</h2>
-            <p>The platform is provided "as is" without any warranties. We reserve the right to modify or terminate the service at any time.</p>
+            <p>The platform is provided on an "AS IS" and "AS AVAILABLE" basis without any warranties of any kind. We reserve the right to modify or terminate the service at any time without notice.</p>
           </section>
         </div>
 
         <div v-else class="legal-text">
           <section>
-            <h2>1. Data Collection</h2>
-            <p><strong>We do not collect any personal data from users browsing the menus.</strong> We do not use tracking cookies, we do not require user accounts for browsing, and we do not store your location or identity.</p>
+            <h2>1. Overview</h2>
+            <p>We value your privacy. This policy explains how we handle information on Pro Menu.</p>
           </section>
 
           <section>
-            <h2>2. Shop Owner Data</h2>
-            <p>We only store data provided by shop owners (Name, Address, Menu, WhatsApp Number) for the purpose of displaying their digital catalog.</p>
+            <h2>2. Analytics & Cookies</h2>
+            <p>We use <strong>Google Analytics for Firebase</strong> to understand how users interact with our platform. This service tracks anonymous metrics such as page views, shop menu popularity, search patterns, and basic demographic data (approximate location, age, gender). This data is used solely to improve our service and help shop owners understand their audience.</p>
           </section>
 
           <section>
-            <h2>3. Third-Party Services</h2>
+            <h2>3. Shop Owner Data</h2>
+            <p>We store data provided by shop owners (Name, Address, Menu, Phone Number) for the purpose of displaying their digital catalog to the public.</p>
+          </section>
+
+          <section>
+            <h2>4. Third-Party Services</h2>
             <p>Our "Order via WhatsApp" button directs you to the WhatsApp platform. Once you leave our site, you are subject to WhatsApp's privacy policy. We do not receive copies of your messages or orders.</p>
           </section>
 
           <section>
-            <h2>4. Security</h2>
-            <p>While we take reasonable steps to secure the platform via Firebase, we cannot guarantee absolute security of data stored in the cloud.</p>
+            <h2>5. Data Security</h2>
+            <p>We implement industry-standard security measures through Firebase (a Google service). However, no method of transmission over the Internet or electronic storage is 100% secure. You acknowledge that we cannot guarantee the absolute security of your information and are not liable for any unauthorized data access or leaks.</p>
           </section>
         </div>
       </div>

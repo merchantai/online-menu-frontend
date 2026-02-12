@@ -12,6 +12,20 @@ const selectedLocation = ref('');
 const collapsedCategories = ref({}); // Use object for better reactivity tracking in templates
 const isRegistrationModalOpen = ref(false);
 
+import { logAnalyticsEvent } from '../api';
+import { watch } from 'vue';
+
+// Track searches and filter usage
+watch([selectedCategory, selectedLocation, searchQuery], ([cat, loc, query]) => {
+  if (cat || loc || query) {
+    logAnalyticsEvent('search_shop', {
+      category: cat || 'all',
+      location: loc || 'all',
+      search_query: query || ''
+    });
+  }
+});
+
 onMounted(async () => {
   await menuStore.fetchAllHotels();
 });

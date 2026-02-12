@@ -7,10 +7,23 @@ import OrderSummary from '../components/OrderSummary.vue';
 import ItemDrawer from '../components/ItemDrawer.vue';
 
 import { getDiscoveryUrl } from '../utils/domain';
+import { logAnalyticsEvent } from '../api';
+import { watch } from 'vue';
 
 const menuStore = useMenuStore();
 const router = useRouter();
 const discoveryUrl = getDiscoveryUrl();
+
+// Track store view
+watch(() => menuStore.hotel, (hotel) => {
+  if (hotel) {
+    logAnalyticsEvent('view_store', {
+      store_id: hotel.id,
+      store_name: hotel.name,
+      location: hotel.city || 'unspecified'
+    });
+  }
+}, { immediate: true });
 
 // UI State
 const selectedItem = ref(null);

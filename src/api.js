@@ -17,6 +17,7 @@ import {
   deleteDoc
 } from "firebase/firestore";
 import { ref, deleteObject, getStorage, uploadBytes, getDownloadURL } from "firebase/storage";
+import { getAnalytics, logEvent } from "firebase/analytics";
 
 // ---- CONFIG ----
 const firebaseConfig = {
@@ -25,7 +26,8 @@ const firebaseConfig = {
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || `${import.meta.env.VITE_FIREBASE_PROJECT_ID}.appspot.com`,
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || import.meta.env.VITE_FIREBASE_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID 
 };
 
 // ---- INIT ----
@@ -33,12 +35,20 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 const storage = getStorage(app); 
+const analytics = getAnalytics(app);
 const provider = new GoogleAuthProvider();
 
 let currentUser = null; 
 let hotelData = null; 
 
-export { auth, db, storage, provider }; 
+export { auth, db, storage, provider, analytics }; 
+
+/**
+ * Log a custom analytics event
+ */
+export function logAnalyticsEvent(name, params = {}) {
+  logEvent(analytics, name, params);
+}
 
 // ---- AUTH ----
 export async function login() {

@@ -3,12 +3,20 @@ import { onMounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import { useMenuStore } from './stores/menu';
 import { getStoreId } from './utils/domain';
+import { logAnalyticsEvent } from './api';
 import NavBar from './components/NavBar.vue';
 import SideMenu from './components/SideMenu.vue';
 
 const menuStore = useMenuStore();
 const route = useRoute();
 const isSideMenuOpen = ref(false);
+
+onMounted(() => {
+  logAnalyticsEvent('page_view', {
+    page_path: window.location.pathname,
+    page_location: window.location.href
+  });
+});
 
 const initStore = async (storeId) => {
   // If we're on a platform page or ID is missing, clear the store
