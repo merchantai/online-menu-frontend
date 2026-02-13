@@ -9,7 +9,7 @@ export default defineConfig({
     vue(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
+      includeAssets: ['apple-touch-icon.png', 'pwa-192x192.png', 'pwa-512x512.png'],
       manifest: {
         name: 'Pro Menu',
         short_name: 'ProMenu',
@@ -33,7 +33,11 @@ export default defineConfig({
             purpose: 'any maskable'
           }
         ]
-      }
+      },
+      devOptions: {
+        enabled: true
+      },
+      injectRegister: 'auto'
     })
   ],
   resolve: {
