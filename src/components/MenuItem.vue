@@ -49,7 +49,11 @@ const handleWeightInput = (event) => {
 </script>
 
 <template>
-  <div class="menu-item-row" @click="$emit('open', item)">
+  <div 
+    class="menu-item-row" 
+    :class="{ 'is-monochrome': item.available === false && !menuStore.isAdmin }"
+    @click="(item.available !== false || menuStore.isAdmin) && $emit('open', item)"
+  >
     <!-- Image -->
     <div class="menu-item__image-container">
       <img 
@@ -64,19 +68,22 @@ const handleWeightInput = (event) => {
     <div class="menu-item__details">
       <h3 class="menu-item__title">{{ item.name }}</h3>
       <p class="menu-item__description">{{ item.description }}</p>
-      <span class="menu-item__price">{{ formattedPrice }}</span>
+      <div class="menu-item__price-container">
+        <span class="menu-item__price">{{ formattedPrice }}</span>
+        <span v-if="item.available === false" class="badge-unavailable">Out of Stock</span>
+      </div>
     </div>
     
     <!-- Actions -->
     <div class="menu-item__actions" @click.stop>
       <!-- Admin Actions -->
-      <div v-if="menuStore.isAdmin" class="admin-actions">
-        <button @click="emit('edit', item)" class="btn btn--small btn--outline" aria-label="Edit">✏️</button>
-        <button @click="emit('delete', item.id)" class="btn btn--small btn--danger" aria-label="Delete">🗑️</button>
+      <div v-if="menuStore.isAdmin" class="admin-actions no-grayscale">
+        <button @click.stop="emit('edit', item)" class="btn btn--small btn--outline" aria-label="Edit">✏️</button>
+        <button @click.stop="emit('delete', item.id)" class="btn btn--small btn--danger" aria-label="Delete">🗑️</button>
       </div>
 
       <!-- Quantity Controls -->
-      <div v-else class="quantity-controls">
+      <div v-else class="quantity-controls" :class="{ 'is-disabled': item.available === false }">
         <!-- Unit Based (+/-) -->
         <template v-if="item.quantityType === 'unit' || !item.quantityType">
           <div v-if="quantity > 0" class="quantity-control-group">
@@ -100,6 +107,7 @@ const handleWeightInput = (event) => {
               class="weight-input"
               :value="quantity || ''"
               @input="handleWeightInput"
+              :disabled="item.available === false"
             />
             <span class="weight-unit">{{ item.quantityType }}</span>
           </div>

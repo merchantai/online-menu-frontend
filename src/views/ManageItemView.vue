@@ -26,7 +26,8 @@ const formData = ref({
   image: null,
   cat: [],
   currency: 'INR',
-  quantityType: 'unit'
+  quantityType: 'unit',
+  available: true
 });
 
 const categoriesInput = ref('');
@@ -37,15 +38,18 @@ const isCompressing = ref(false);
 const isSaving = ref(false);
 
 onMounted(async () => {
+  // If store is not initialized (e.g. direct refresh), try to load it from URL
+  if (!menuStore.hotel && route.params.hotelId) {
+    await menuStore.fetchHotelAndMenu(route.params.hotelId);
+  }
+
   if (isEdit) {
-    // Wait for store to be ready if needed, or find in existing list
     const item = menuStore.menuItems.find(i => i.id === itemId);
     if (item) {
       loadItem(item);
     } else {
-      // If not in store (e.g. direct link), we'd usually fetch from API
-      // For now, let's just go back if not found or implement a fetch
-      router.push('/');
+      // Return to shop home if item not found
+      router.push(`/${route.params.hotelId || ''}`);
     }
   }
 });
@@ -54,7 +58,8 @@ const loadItem = (item) => {
   formData.value = { 
     ...item,
     currency: item.currency || 'INR',
-    quantityType: item.quantityType || 'unit'
+    quantityType: item.quantityType || 'unit',
+    available: item.available !== false
   };
   categoriesInput.value = Array.isArray(item.cat) ? item.cat.join(', ') : item.cat || '';
   imagePreview.value = item.image;
@@ -111,7 +116,7 @@ const handleSubmit = async () => {
       await menuStore.addItem(newItem, file);
     }
     
-    router.push('/');
+    router.push(`/${route.params.hotelId}`);
   } catch (error) {
     alert("Save failed: " + error.message);
   } finally {
@@ -199,6 +204,13 @@ const handleSubmit = async () => {
           </div>
         </div>
 
+        <div class="form-group row-inline">
+          <label class="checkbox-label">
+            <input type="checkbox" v-model="formData.available" />
+            <span>Available (Show in menu)</span>
+          </label>
+        </div>
+
         <div class="form-actions mt-2">
           <button type="button" @click="router.back()" class="btn btn--secondary">Cancel</button>
           <button type="submit" class="btn btn--primary" :disabled="isSaving || isCompressing">
@@ -284,6 +296,26 @@ const handleSubmit = async () => {
 .mt-1 { margin-top: 0.25rem; }
 .mt-2 { margin-top: 1.5rem; }
 .text-sm { font-size: 0.875rem; }
+.row-inline {
+  display: flex;
+  align-items: center;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  font-weight: 500;
+  user-select: none;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 1.25rem;
+  height: 1.25rem;
+  accent-color: var(--primary-color);
+}
+
 .text-muted { color: var(--text-muted); }
 
 @media (max-width: 600px) {

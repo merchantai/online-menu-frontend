@@ -616,3 +616,26 @@ textarea.form-input {
     opacity: 1;
   }
 }
+
+/* Availability Helpers */
+.is-monochrome {
+  filter: grayscale(100%);
+  opacity: 0.7;
+}
+
+.is-disabled {
+  pointer-events: none;
+  cursor: not-allowed;
+}
+
+.badge-unavailable {
+  background-color: var(--gray);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  margin-top: 4px;
+  display: inline-block;
+}

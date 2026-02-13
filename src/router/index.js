@@ -32,19 +32,6 @@ const routes = [
     props: { type: 'privacy' }
   },
   
-  // Management Routes (Platform Level)
-  {
-    path: '/manage/add',
-    name: 'add-item',
-    component: ManageItemView
-  },
-  {
-    path: '/manage/edit/:itemId',
-    name: 'edit-item',
-    component: ManageItemView,
-    props: true
-  },
-
   // Shop Routes (ID in path)
   {
     path: '/:hotelId',
@@ -55,6 +42,17 @@ const routes = [
     path: '/:hotelId/about',
     name: 'about',
     component: AboutView
+  },
+  {
+    path: '/:hotelId/manage/add',
+    name: 'add-item',
+    component: ManageItemView
+  },
+  {
+    path: '/:hotelId/manage/edit/:itemId',
+    name: 'edit-item',
+    component: ManageItemView,
+    props: true
   }
 ]
 ;

@@ -61,6 +61,9 @@ const filteredStores = computed(() => {
   const locFilter = selectedLocation.value;
 
   return stores.value.filter(store => {
+    // Availability Check: Skip disabled stores
+    if (store.isEnabled === false) return false;
+
     const matchesName = !query || store.name.toLowerCase().includes(query);
     
     const storeCats = getStoreCats(store);

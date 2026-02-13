@@ -81,11 +81,11 @@ const toggleCategory = (categoryName) => {
 };
 
 const openAddPage = () => {
-  router.push('/manage/add');
+  router.push(`/${menuStore.hotel.id}/manage/add`);
 };
 
 const openEditPage = (item) => {
-  router.push(`/manage/edit/${item.id}`);
+  router.push(`/${menuStore.hotel.id}/manage/edit/${item.id}`);
 };
 
 const openItemDrawer = (item) => {
@@ -111,50 +111,62 @@ const handleDelete = async (itemId) => {
       </div>
     </div>
     
-    <div v-else class="menu-container">
-      <!-- Search and Admin Controls -->
-      <div class="menu-header">
-        <div class="search-bar">
-          <span class="search-icon">🔍</span>
-          <input 
-            v-model="searchQuery" 
-            placeholder="Search for dishes..." 
-            class="search-input"
-          />
-        </div>
-        <div v-if="menuStore.isAdmin" class="admin-actions">
-          <button @click="openAddPage" class="btn btn--primary">+ Add Item</button>
+    <div v-else-if="menuStore.hotel" class="menu-container">
+      <!-- Availability Header if Disabled -->
+      <div v-if="menuStore.hotel.isEnabled === false" class="error-state">
+        <div class="error-card">
+          <span class="error-icon">🔒</span>
+          <h2>Shop Currently Unavailable</h2>
+          <p>{{ menuStore.hotel.disabledMessage || 'This shop is temporarily not accepting orders.' }}</p>
+          <a :href="discoveryUrl" class="btn btn--primary">Back to Discovery</a>
         </div>
       </div>
 
-      <!-- Categorized Menu -->
-      <div v-for="category in categorizedMenu" :key="category.name" class="category-section">
-        <div 
-          class="category-header" 
-          @click="toggleCategory(category.name)"
-        >
-          <h3>{{ category.name }} ({{ category.items.length }})</h3>
-          <span class="chevron" :class="{ 'collapsed': collapsedCategories[category.name] }">▼</span>
+      <template v-else>
+        <!-- Search and Admin Controls -->
+        <div class="menu-header">
+          <div class="search-bar">
+            <span class="search-icon">🔍</span>
+            <input 
+              v-model="searchQuery" 
+              placeholder="Search for dishes..." 
+              class="search-input"
+            />
+          </div>
+          <div v-if="menuStore.isAdmin" class="admin-actions">
+            <button @click="openAddPage" class="btn btn--primary">+ Add Item</button>
+          </div>
         </div>
-        
-        <div 
-          v-show="!collapsedCategories[category.name]" 
-          class="menu-grid"
-        >
-          <MenuItem 
-            v-for="item in category.items" 
-            :key="item.id" 
-            :item="item"
-            @edit="openEditPage"
-            @delete="handleDelete"
-            @open="openItemDrawer"
-          />
-        </div>
-      </div>
 
-      <div v-if="categorizedMenu.length === 0" class="empty-state">
-        <p>No items found matching your search.</p>
-      </div>
+        <!-- Categorized Menu -->
+        <div v-for="category in categorizedMenu" :key="category.name" class="category-section">
+          <div 
+            class="category-header" 
+            @click="toggleCategory(category.name)"
+          >
+            <h3>{{ category.name }} ({{ category.items.length }})</h3>
+            <span class="chevron" :class="{ 'collapsed': collapsedCategories[category.name] }">▼</span>
+          </div>
+          
+          <div 
+            v-show="!collapsedCategories[category.name]" 
+            class="menu-grid"
+          >
+            <MenuItem 
+              v-for="item in category.items" 
+              :key="item.id" 
+              :item="item"
+              @edit="openEditPage"
+              @delete="handleDelete"
+              @open="openItemDrawer"
+            />
+          </div>
+        </div>
+
+        <div v-if="categorizedMenu.length === 0" class="empty-state">
+          <p>No items found matching your search.</p>
+        </div>
+      </template>
     </div>
 
     <!-- MenuItemForm removed -->
