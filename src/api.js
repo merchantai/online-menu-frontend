@@ -13,6 +13,7 @@ import {
   getDoc,
   getDocs,
   addDoc,
+  setDoc,
   updateDoc,
   deleteDoc
 } from "firebase/firestore";
@@ -54,14 +55,12 @@ export function logAnalyticsEvent(name, params = {}) {
 export async function login() {
   const result = await signInWithPopup(auth, provider);
   currentUser = result.user;
-  console.log("✅ Logged in:", currentUser.email);
   return currentUser;
 }
 
 export async function logout() {
   await signOut(auth);
   currentUser = null;
-  console.log("👋 Logged out");
 }
 
 export function watchAuthState(callback) {
@@ -87,15 +86,78 @@ export async function loadHotel(hotelId) {
   return hotelData;
 }
 
+export function isPlatformAdmin() {
+  if (!currentUser) return false;
+  const adminList = import.meta.env.VITE_ADMIN_LIST || '';
+  const admins = adminList.split(',').map(e => e.trim().toLowerCase());
+  const isPlatform = admins.includes(currentUser.email.toLowerCase());
+  return isPlatform;
+}
+
 export function isAdmin() {
-    // Optional client-side check if needed for UI elements, 
-    // but we removed the strict check in CRUD to rely on backend rules if preferred.
-    // Keeping it here for reference or UI conditional rendering.
-  if (!currentUser || !hotelData) return false;
+  if (!currentUser) return false;
+  if (isPlatformAdmin()) return true;
+  if (!hotelData) return false;
+  
   if (Array.isArray(hotelData.ownerEmail)) {
-      return hotelData.ownerEmail.includes(currentUser.email);
+      return hotelData.ownerEmail.map(e => e.toLowerCase()).includes(currentUser.email.toLowerCase());
   }
-  return currentUser.email === hotelData.ownerEmail;
+  return currentUser.email.toLowerCase() === (hotelData.ownerEmail || '').toLowerCase();
+}
+
+// ---- HOTEL CRUD (PLATFORM ADMIN) ----
+
+export async function uploadHotelImage(hotelId, file) {
+  if (!file) throw new Error("No file provided");
+  const imageRef = ref(storage, `hotels/${hotelId}/branding/${file.name}`);
+  await uploadBytes(imageRef, file);
+  return await getDownloadURL(imageRef);
+}
+
+export async function addHotel(hotel, file, customId = null) {
+  if (customId) {
+    const hotelRef = doc(db, "hotels", customId);
+    // Check if ID already exists
+    const existing = await getDoc(hotelRef);
+    if (existing.exists()) throw new Error("Shop ID already taken. Please choose another.");
+    
+    let finalHotel = { ...hotel };
+    if (file) {
+      const imageUrl = await uploadHotelImage(customId, file);
+      finalHotel.image = imageUrl;
+    }
+    await setDoc(hotelRef, finalHotel);
+    return { id: customId, ...finalHotel };
+  }
+
+  const hotelsRef = collection(db, "hotels");
+  if (file) {
+    const newHotelDoc = await addDoc(hotelsRef, hotel);
+    const imageUrl = await uploadHotelImage(newHotelDoc.id, file);
+    await updateDoc(newHotelDoc, { image: imageUrl });
+    return { id: newHotelDoc.id, ...hotel, image: imageUrl };
+  }
+  const newDoc = await addDoc(hotelsRef, hotel);
+  return { id: newDoc.id, ...hotel };
+}
+
+export async function updateHotel(hotelId, updates, file) {
+  const hotelRef = doc(db, "hotels", hotelId);
+  if (file) {
+    const imageUrl = await uploadHotelImage(hotelId, file);
+    updates.image = imageUrl;
+  }
+  await updateDoc(hotelRef, updates);
+  return true;
+}
+
+export async function deleteHotel(hotelId) {
+  const hotelRef = doc(db, "hotels", hotelId);
+  
+  // Optionally delete menu items first if needed by business logic
+  // For now just delete the shop
+  await deleteDoc(hotelRef);
+  return true;
 }
 
 // ---- MENU CRUD ----

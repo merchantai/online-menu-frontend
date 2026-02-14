@@ -6,25 +6,36 @@ service cloud.firestore {
     function isAuthenticated() {
       return request.auth != null;
     }
+
+    // Check if user is a platform admin
+    function isPlatformAdmin() {
+      return isAuthenticated() && (
+        request.auth.token.email.lower() == 'merchantai@gmail.com' || 
+        request.auth.token.email.lower() == 'admin@merchantai.com'
+      );
+    }
+
+    // Helper to check hotel ownership
+    function isHotelOwner(hotelId) {
+      let hotelData = (hotelId != null) ? get(/databases/$(database)/documents/hotels/$(hotelId)).data : resource.data;
+      return isAuthenticated() && (
+        hotelData.ownerEmail is list ? 
+        request.auth.token.email.lower() in hotelData.ownerEmail : 
+        request.auth.token.email.lower() == hotelData.ownerEmail.lower()
+      );
+    }
     
     match /hotels/{hotelId} {
       allow read: if true;
-      // Allow create/update/delete only if user is in ownerEmail list
-      allow write: if isAuthenticated() && (
-        resource.data.ownerEmail is list ? 
-        request.auth.token.email in resource.data.ownerEmail : 
-        request.auth.token.email == resource.data.ownerEmail
-      );
+      
+      // Platform admins can do anything. Owners can update their own shop.
+      // For create, we check request.resource.data
+      allow create: if isPlatformAdmin(); 
+      allow update, delete: if isPlatformAdmin() || isHotelOwner(null);
 
       match /menu/{menuId} {
         allow read: if true;
-        
-        // Check parent hotel document for ownership
-        allow write: if isAuthenticated() && (
-            get(/databases/$(database)/documents/hotels/$(hotelId)).data.ownerEmail is list ?
-            request.auth.token.email in get(/databases/$(database)/documents/hotels/$(hotelId)).data.ownerEmail :
-            request.auth.token.email == get(/databases/$(database)/documents/hotels/$(hotelId)).data.ownerEmail
-        );
+        allow write: if isPlatformAdmin() || isHotelOwner(hotelId);
       }
     }
   }

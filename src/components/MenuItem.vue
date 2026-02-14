@@ -14,12 +14,7 @@ const emit = defineEmits(["edit", "delete", "open"]);
 const menuStore = useMenuStore();
 const cartStore = useCartStore();
 
-const formattedPrice = computed(() => {
-  const currency = props.item.currency || 'INR';
-  const unitSuffix = props.item.quantityType && props.item.quantityType !== 'unit' 
-    ? ` / ${props.item.quantityType}` 
-    : ' / item';
-
+const formatValue = (value, currency) => {
   const locales = {
     'INR': 'en-IN',
     'USD': 'en-US',
@@ -27,14 +22,49 @@ const formattedPrice = computed(() => {
     'GBP': 'en-GB',
     'JPY': 'ja-JP'
   };
-  
-  const formatted = new Intl.NumberFormat(locales[currency] || 'en-IN', {
+  return new Intl.NumberFormat(locales[currency] || 'en-IN', {
     style: 'currency',
     currency: currency,
     currencyDisplay: 'symbol'
-  }).format(props.item.price);
+  }).format(value);
+};
 
-  return `${formatted}${unitSuffix}`;
+const formattedPrice = computed(() => {
+  const currency = props.item.currency || 'INR';
+  const unitSuffix = props.item.quantityType && props.item.quantityType !== 'unit' 
+    ? ` / ${props.item.quantityType}` 
+    : ' / item';
+
+  return `${formatValue(props.item.price, currency)}${unitSuffix}`;
+});
+
+const discountedPrice = computed(() => {
+  if (!props.item.discountType || props.item.discountType === 'none') return null;
+  
+  const currency = props.item.currency || 'INR';
+  const unitSuffix = props.item.quantityType && props.item.quantityType !== 'unit' 
+    ? ` / ${props.item.quantityType}` 
+    : ' / item';
+
+  let finalPrice = props.item.price;
+  if (props.item.discountType === 'percentage') {
+    finalPrice = props.item.price * (1 - props.item.discountValue / 100);
+  } else if (props.item.discountType === 'amount') {
+    finalPrice = Math.max(0, props.item.price - props.item.discountValue);
+  } else if (props.item.discountType === 'units') {
+     // For units, the "unit price" doesn't strictly change but the subtotal does.
+     // However, for UI we can show "B1G1" or similar
+     return null; 
+  }
+
+  return `${formatValue(finalPrice, currency)}${unitSuffix}`;
+});
+
+const offerLabel = computed(() => {
+  if (props.item.discountType === 'percentage') return `${props.item.discountValue}% OFF`;
+  if (props.item.discountType === 'amount') return `OFFER`;
+  if (props.item.discountType === 'units') return `BUY 1 GET ${props.item.discountValue - 1} FREE`;
+  return null;
 });
 
 const quantity = computed(() => cartStore.getItemQuantity(props.item.id));
@@ -66,10 +96,17 @@ const handleWeightInput = (event) => {
     
     <!-- Details -->
     <div class="menu-item__details">
-      <h3 class="menu-item__title">{{ item.name }}</h3>
+      <div class="menu-item__header">
+        <h3 class="menu-item__title">{{ item.name }}</h3>
+        <span v-if="offerLabel" class="badge-offer">{{ offerLabel }}</span>
+      </div>
       <p class="menu-item__description">{{ item.description }}</p>
       <div class="menu-item__price-container">
-        <span class="menu-item__price">{{ formattedPrice }}</span>
+        <template v-if="discountedPrice">
+          <span class="menu-item__price">{{ discountedPrice }}</span>
+          <span class="menu-item__price--original">{{ formattedPrice }}</span>
+        </template>
+        <span v-else class="menu-item__price">{{ formattedPrice }}</span>
         <span v-if="item.available === false" class="badge-unavailable">Out of Stock</span>
       </div>
     </div>
@@ -161,5 +198,29 @@ const handleWeightInput = (event) => {
   color: var(--primary-color);
   font-weight: 700;
   margin-left: 0.25rem;
+}
+.menu-item__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.badge-offer {
+  background: #ff4d4d;
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 800;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.menu-item__price--original {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  text-decoration: line-through;
+  margin-left: 0.5rem;
 }
 </style>

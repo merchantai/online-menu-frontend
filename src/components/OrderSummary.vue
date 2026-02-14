@@ -29,7 +29,24 @@ const formattedTotal = computed(() => {
   }).format(cartStore.totalPrice);
 });
 
+const getItemSubtotal = (item) => {
+  if (typeof cartStore.getItemSubtotal === 'function') {
+    return cartStore.getItemSubtotal(item);
+  }
+  return item.price * item.quantity;
+};
+
 const formatItemTotal = (item) => {
+  const currency = item.currency || 'INR';
+  const subtotal = getItemSubtotal(item);
+  return new Intl.NumberFormat(getLocales(currency), {
+    style: 'currency',
+    currency: currency,
+    currencyDisplay: 'symbol'
+  }).format(subtotal);
+};
+
+const formatItemOriginalTotal = (item) => {
   const currency = item.currency || 'INR';
   return new Intl.NumberFormat(getLocales(currency), {
     style: 'currency',
@@ -95,7 +112,12 @@ const sendOrderToWhatsapp = () => {
                 <span class="quantity-display">{{ item.quantity }}</span>
                 <button @click="cartStore.addItem(item)" class="btn-quantity">+</button>
               </div>
-              <span class="order-item__total">{{ formatItemTotal(item) }}</span>
+              <div class="order-item__total-container">
+                <span v-if="getItemSubtotal(item) < (item.price * item.quantity)" class="order-item__total--original">
+                  {{ formatItemOriginalTotal(item) }}
+                </span>
+                <span class="order-item__total">{{ formatItemTotal(item) }}</span>
+              </div>
             </div>
           </div>
         </div>
@@ -183,5 +205,16 @@ const sendOrderToWhatsapp = () => {
 
 .btn--whatsapp:hover {
   background-color: #128C7E;
+}
+.order-item__total-container {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.order-item__total--original {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-decoration: line-through;
 }
 </style>

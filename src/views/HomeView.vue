@@ -1,6 +1,6 @@
 <script setup>
-import { ref, computed } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, computed, onMounted } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
 import { useMenuStore } from '../stores/menu';
 import MenuItem from '../components/MenuItem.vue';
 import OrderSummary from '../components/OrderSummary.vue';
@@ -12,6 +12,7 @@ import { watch } from 'vue';
 
 const menuStore = useMenuStore();
 const router = useRouter();
+const route = useRoute();
 const discoveryUrl = getDiscoveryUrl();
 
 // Track store view

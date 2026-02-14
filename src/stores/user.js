@@ -33,9 +33,17 @@ export const useUserStore = defineStore("user", () => {
     }
   };
 
+  const isPlatformAdmin = computed(() => {
+    if (!user.value) return false;
+    const adminList = import.meta.env.VITE_ADMIN_LIST || '';
+    const admins = adminList.split(',').map(e => e.trim().toLowerCase());
+    return admins.includes(user.value.email.toLowerCase());
+  });
+
   return {
     user,
     loading,
+    isPlatformAdmin,
     login,
     logout
   };

@@ -27,7 +27,9 @@ const formData = ref({
   cat: [],
   currency: 'INR',
   quantityType: 'unit',
-  available: true
+  available: true,
+  discountType: 'none',
+  discountValue: 0
 });
 
 const categoriesInput = ref('');
@@ -38,11 +40,6 @@ const isCompressing = ref(false);
 const isSaving = ref(false);
 
 onMounted(async () => {
-  // If store is not initialized (e.g. direct refresh), try to load it from URL
-  if (!menuStore.hotel && route.params.hotelId) {
-    await menuStore.fetchHotelAndMenu(route.params.hotelId);
-  }
-
   if (isEdit) {
     const item = menuStore.menuItems.find(i => i.id === itemId);
     if (item) {
@@ -59,7 +56,9 @@ const loadItem = (item) => {
     ...item,
     currency: item.currency || 'INR',
     quantityType: item.quantityType || 'unit',
-    available: item.available !== false
+    available: item.available !== false,
+    discountType: item.discountType || 'none',
+    discountValue: item.discountValue || 0
   };
   categoriesInput.value = Array.isArray(item.cat) ? item.cat.join(', ') : item.cat || '';
   imagePreview.value = item.image;
@@ -134,82 +133,121 @@ const handleSubmit = async () => {
       </header>
 
       <form @submit.prevent="handleSubmit" class="manage-form card">
-        <div class="form-group">
-          <label>Item Name</label>
-          <input v-model="formData.name" required class="form-input" placeholder="e.g. Butter Chicken" />
-        </div>
-
-        <div class="form-row">
-          <div class="form-group flex-2">
-            <label>Price per {{ formData.quantityType === 'unit' ? 'item' : formData.quantityType }}</label>
-            <input v-model.number="formData.price" type="number" required class="form-input" placeholder="0.00" />
+        <!-- Section 1: Basic Information -->
+        <section class="form-section">
+          <h2 class="section-title">General Info</h2>
+          <div class="form-group">
+            <label>Item Name</label>
+            <input v-model="formData.name" required class="form-input" placeholder="e.g. Butter Chicken" />
           </div>
-          <div class="form-group flex-1">
-            <label>Currency</label>
-            <select v-model="formData.currency" class="form-input">
-              <option v-for="c in currencies" :key="c.code" :value="c.code">
-                {{ c.code }} ({{ c.symbol }})
-              </option>
-            </select>
+          <div class="form-group">
+            <label>Description</label>
+            <textarea v-model="formData.description" class="form-input" placeholder="Ingredients, spice level, etc."></textarea>
           </div>
-          <div class="form-group flex-1">
-            <label>Quantity Type</label>
-            <select v-model="formData.quantityType" class="form-input">
-              <option value="unit">Unit (Default)</option>
-              <option value="g">Grams (g)</option>
-              <option value="kg">Kilograms (kg)</option>
-            </select>
+          <div class="form-group">
+            <label>Categories (comma separated)</label>
+            <input v-model="categoriesInput" placeholder="e.g. Starter, Veg, Chinese" class="form-input" />
           </div>
-        </div>
+        </section>
 
-        <div class="form-group">
-          <label>Description</label>
-          <textarea v-model="formData.description" class="form-input" placeholder="Ingredients, spice level, etc."></textarea>
-        </div>
-
-        <div class="form-group">
-          <label>Categories (comma separated)</label>
-          <input v-model="categoriesInput" placeholder="e.g. Starter, Veg, Chinese" class="form-input" />
-        </div>
-
-        <div class="form-group">
-          <label>Image Source</label>
-          <div class="mb-2">
-            <input v-model="formData.image" placeholder="Paste Image URL (https://...)" class="form-input" />
-          </div>
-
-          <div class="file-input-wrapper">
-             <span class="text-sm text-muted">OR Upload File</span>
-             <input 
-               ref="fileInput" 
-               type="file" 
-               @change="handleFileChange" 
-               accept="image/*" 
-               class="form-input mt-1" 
-               :disabled="isCompressing"
-             />
-             <div v-if="isCompressing" class="compression-loader">
-                <span class="spinner">⏳</span> Compressing & Optimizing...
-             </div>
-             <div v-else-if="imageFile" class="text-sm text-success mt-1">
-                ✅ Image optimized (WebP)
-             </div>
-          </div>
-          
-          <div v-if="imagePreview || formData.image" class="image-preview-container">
-            <div class="image-preview">
-               <img :src="imagePreview || formData.image" alt="Preview" @error="$event.target.style.display='none'" />
+        <!-- Section 2: Pricing & Availability -->
+        <section class="form-section">
+          <h2 class="section-title">Pricing & Status</h2>
+          <div class="form-row">
+            <div class="form-group flex-2">
+              <label>Price per {{ formData.quantityType === 'unit' ? 'item' : formData.quantityType }}</label>
+              <input v-model.number="formData.price" type="number" required class="form-input" placeholder="0.00" />
             </div>
-            <button type="button" @click="removeImage" class="btn btn--small btn--danger mt-2" :disabled="isCompressing">Remove Image</button>
+            <div class="form-group flex-1">
+              <label>Currency</label>
+              <select v-model="formData.currency" class="form-input">
+                <option v-for="c in currencies" :key="c.code" :value="c.code">
+                  {{ c.code }} ({{ c.symbol }})
+                </option>
+              </select>
+            </div>
+            <div class="form-group flex-1">
+              <label>Quantity Type</label>
+              <select v-model="formData.quantityType" class="form-input">
+                <option value="unit">Unit (Default)</option>
+                <option value="g">Grams (g)</option>
+                <option value="kg">Kilograms (kg)</option>
+              </select>
+            </div>
           </div>
-        </div>
+          <div class="form-group mt-2">
+            <label class="checkbox-label">
+              <input type="checkbox" v-model="formData.available" />
+              <span>Available (Show in menu)</span>
+            </label>
+          </div>
+        </section>
 
-        <div class="form-group row-inline">
-          <label class="checkbox-label">
-            <input type="checkbox" v-model="formData.available" />
-            <span>Available (Show in menu)</span>
-          </label>
-        </div>
+        <!-- Section 3: Offers & Discounts -->
+        <section class="form-section">
+          <h2 class="section-title">Offers & Discounts</h2>
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label>Discount Type</label>
+              <select v-model="formData.discountType" class="form-input">
+                <option value="none">No Discount</option>
+                <option value="percentage">Percentage (%)</option>
+                <option value="amount">Fixed Amount Off</option>
+                <option value="units">BOGO / Units Offer</option>
+              </select>
+            </div>
+            <div class="form-group flex-1" v-if="formData.discountType !== 'none'">
+              <label>
+                {{ formData.discountType === 'percentage' ? 'Percentage Off (%)' : (formData.discountType === 'amount' ? 'Amount Off' : 'Total Units for Offer') }}
+              </label>
+              <input 
+                v-model.number="formData.discountValue" 
+                type="number" 
+                class="form-input" 
+                :placeholder="formData.discountType === 'units' ? 'e.g. 2 for B1G1' : 'Value'" 
+              />
+              <p class="text-xs text-muted mt-1" v-if="formData.discountType === 'units'">
+                * e.g. Buy 1 Get 1 = <strong>2</strong> units total.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Section 4: Media -->
+        <section class="form-section">
+          <h2 class="section-title">Item Media</h2>
+          <div class="form-group">
+            <label>Image Source</label>
+            <div class="mb-2">
+              <input v-model="formData.image" placeholder="Paste Image URL (https://...)" class="form-input" />
+            </div>
+
+            <div class="file-input-wrapper">
+               <span class="text-sm text-muted">OR Upload File</span>
+               <input 
+                 ref="fileInput" 
+                 type="file" 
+                 @change="handleFileChange" 
+                 accept="image/*" 
+                 class="form-input mt-1" 
+                 :disabled="isCompressing"
+               />
+               <div v-if="isCompressing" class="compression-loader">
+                  <span class="spinner">⏳</span> Compressing & Optimizing...
+               </div>
+               <div v-else-if="imageFile" class="text-sm text-success mt-1">
+                  ✅ Image optimized (WebP)
+               </div>
+            </div>
+            
+            <div v-if="imagePreview || formData.image" class="image-preview-container">
+              <div class="image-preview">
+                 <img :src="imagePreview || formData.image" alt="Preview" @error="$event.target.style.display='none'" />
+              </div>
+              <button type="button" @click="removeImage" class="btn btn--small btn--danger mt-2" :disabled="isCompressing">Remove Image</button>
+            </div>
+          </div>
+        </section>
 
         <div class="form-actions mt-2">
           <button type="button" @click="router.back()" class="btn btn--secondary">Cancel</button>
@@ -242,10 +280,35 @@ const handleSubmit = async () => {
 }
 
 .manage-form {
-  padding: 2rem;
+  padding: 2.5rem;
   background: var(--bg-card);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-md);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
+}
+
+.form-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.form-section:last-of-type {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.section-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--primary-color);
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .container--narrow {

@@ -1,6 +1,8 @@
 <script setup>
+import { useRoute } from 'vue-router';
 import { useMenuStore } from '../stores/menu';
 
+const route = useRoute();
 const menuStore = useMenuStore();
 </script>
 
@@ -8,7 +10,7 @@ const menuStore = useMenuStore();
   <div class="about-view">
     <div v-if="menuStore.hotel" class="hotel-card">
       <div class="hotel-header">
-         <img v-if="menuStore.hotel.logo" :src="menuStore.hotel.logo" :alt="menuStore.hotel.name" class="hotel-logo" />
+         <img v-if="menuStore.hotel.image || menuStore.hotel.logo" :src="menuStore.hotel.image || menuStore.hotel.logo" :alt="menuStore.hotel.name" class="hotel-logo" />
          <h1>{{ menuStore.hotel.name }}</h1>
       </div>
 
@@ -20,7 +22,12 @@ const menuStore = useMenuStore();
 
         <div class="info-group">
             <h3>Contact</h3>
-            <p v-if="menuStore.hotel.phone">📞 {{ menuStore.hotel.phone }}</p>
+            <p v-if="menuStore.hotel.phoneNumber">📞 {{ menuStore.hotel.phoneCode }} {{ menuStore.hotel.phoneNumber }}</p>
+            <p v-else-if="menuStore.hotel.phone">📞 {{ menuStore.hotel.phone }}</p>
+            
+            <p v-if="menuStore.hotel.whatsappNumber">💬 WhatsApp: {{ menuStore.hotel.whatsappCode }} {{ menuStore.hotel.whatsappNumber }}</p>
+            <p v-else-if="menuStore.hotel.whatsapp">💬 WhatsApp: {{ menuStore.hotel.whatsapp }}</p>
+
             <p v-if="menuStore.hotel.ownerEmail">
                 ✉️ {{ Array.isArray(menuStore.hotel.ownerEmail) ? menuStore.hotel.ownerEmail[0] : menuStore.hotel.ownerEmail }}
             </p>
@@ -34,7 +41,17 @@ const menuStore = useMenuStore();
         </div>
       </div>
     </div>
-    <div v-else class="loading">Loading details...</div>
+    <div v-else-if="menuStore.error" class="error-state">
+      <div class="error-card">
+        <span class="error-icon">❌</span>
+        <h2>Shop Not Found</h2>
+        <p>{{ menuStore.error }}</p>
+        <router-link to="/" class="btn btn--primary">Back to Discovery</router-link>
+      </div>
+    </div>
+    <div v-else class="loading">
+       <span class="spinner">⏳</span> Loading details...
+    </div>
   </div>
 </template>
 

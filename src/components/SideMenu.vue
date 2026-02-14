@@ -38,22 +38,31 @@ const handleLogout = () => {
       <div class="side-menu__content">
         <nav class="side-nav">
           <!-- Always show Discovery Home for easy navigation back to platform -->
-          <a :href="discoveryUrl" class="nav-item" @click="$emit('close')">
+          <router-link to="/" class="nav-item" exact-active-class="router-link-exact-active" @click="$emit('close')">
             <span class="icon">🔍</span> Discovery Home
-          </a>
+          </router-link>
           
           <!-- Shop Context Links (Only shown if a shop is active) -->
           <router-link v-if="menuStore.hotel" :to="{ name: 'home' }" class="nav-item" exact-active-class="router-link-exact-active" @click="$emit('close')">
             <span class="icon">🍴</span> Shop Menu
           </router-link>
 
-          <router-link v-if="menuStore.hotel" to="/about" class="nav-item" @click="$emit('close')">
+          <router-link v-if="menuStore.hotel" :to="'/' + menuStore.hotel.id + '/about'" class="nav-item" @click="$emit('close')">
             <span class="icon">ℹ️</span> About Shop
+          </router-link>
+
+          <!-- Platform Admin Link -->
+          <router-link v-if="userStore.isPlatformAdmin" to="/admin" class="nav-item" exact-active-class="router-link-exact-active" @click="$emit('close')">
+            <span class="icon">🛠️</span> Admin Dashboard
           </router-link>
 
           <!-- Platform Links (Always Visible) -->
           <div class="nav-divider"></div>
           
+          <router-link to="/about-platform" class="nav-item" exact-active-class="router-link-exact-active" @click="$emit('close')">
+            <span class="icon">📖</span> About Pro Menu
+          </router-link>
+
           <router-link to="/join" class="nav-item" @click="$emit('close')">
             <span class="icon">🚀</span> Join Pro Menu
           </router-link>

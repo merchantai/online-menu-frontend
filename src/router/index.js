@@ -4,8 +4,11 @@ import LandingView from '../views/LandingView.vue'
 
 const AboutView = () => import('../views/AboutView.vue')
 const ManageItemView = () => import('../views/ManageItemView.vue')
+const AdminDashboardView = () => import('../views/AdminDashboardView.vue')
+const ManageShopView = () => import('../views/ManageShopView.vue')
 const JoinView = () => import('../views/JoinView.vue')
 const LegalView = () => import('../views/LegalView.vue')
+const AboutAppView = () => import('../views/AboutAppView.vue')
 
 const routes = [
   // Platform Routes
@@ -13,6 +16,11 @@ const routes = [
     path: '/',
     name: 'discovery',
     component: LandingView
+  },
+  {
+    path: '/about-platform',
+    name: 'about-platform',
+    component: AboutAppView
   },
   {
     path: '/join',
@@ -32,6 +40,26 @@ const routes = [
     props: { type: 'privacy' }
   },
   
+  // Platform Admin Routes
+  {
+    path: '/admin',
+    name: 'admin-dashboard',
+    component: AdminDashboardView,
+    meta: { requiresAdmin: true }
+  },
+  {
+    path: '/admin/manage/add',
+    name: 'admin-add-shop',
+    component: ManageShopView,
+    meta: { requiresAdmin: true }
+  },
+  {
+    path: '/admin/manage/edit/:hotelId',
+    name: 'admin-edit-shop',
+    component: ManageShopView,
+    meta: { requiresAdmin: true }
+  },
+
   // Shop Routes (ID in path)
   {
     path: '/:hotelId',
@@ -60,6 +88,20 @@ const routes = [
 const router = createRouter({
   history: createWebHistory(),
   routes,
+});
+
+// Guard admin routes
+import { useUserStore } from '../stores/user';
+router.beforeEach(async (to, from, next) => {
+  const userStore = useUserStore();
+  
+  if (to.meta.requiresAdmin) {
+    if (!userStore.user || !userStore.isPlatformAdmin) {
+      next('/');
+      return;
+    }
+  }
+  next();
 });
 
 export default router;

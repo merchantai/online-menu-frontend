@@ -6,7 +6,11 @@ import {
   getMenuItems, 
   addMenuItem, 
   updateMenuItem, 
-  deleteMenuItem 
+  deleteMenuItem,
+  addHotel,
+  updateHotel,
+  deleteHotel,
+  isPlatformAdmin as apiIsPlatformAdmin
 } from "../api";
 import { useUserStore } from "./user";
 
@@ -19,20 +23,29 @@ export const useMenuStore = defineStore("menu", () => {
   
   // Cache timestamps
   const lastFetchedAll = ref(0);
-  const hotelCache = ref({}); // { [hotelId]: { data, menu, timestamp } }
+  const hotelCache = ref({}); 
 
   const userStore = useUserStore();
 
+  const isPlatformAdmin = computed(() => {
+    return userStore.user ? apiIsPlatformAdmin() : false;
+  });
+
   const isAdmin = computed(() => {
-    if (!userStore.user || !hotel.value) return false;
-    // Handle both string and array ownerEmail
+    if (!userStore.user) return false;
+    if (isPlatformAdmin.value) return true;
+    if (!hotel.value) return false;
+
+    const userEmail = userStore.user.email.toLowerCase();
     const owners = hotel.value.ownerEmail || [];
-    return Array.isArray(owners) ? owners.includes(userStore.user.email) : owners === userStore.user.email;
+    if (Array.isArray(owners)) {
+      return owners.map(e => e.toLowerCase()).includes(userEmail);
+    }
+    return owners.toLowerCase() === userEmail;
   });
 
   const fetchAllHotels = async (force = false) => {
     const now = Date.now();
-    // Cache for 5 minutes
     if (!force && allHotels.value.length > 0 && (now - lastFetchedAll.value < 5 * 60 * 1000)) {
       return allHotels.value;
     }
@@ -49,18 +62,70 @@ export const useMenuStore = defineStore("menu", () => {
     return allHotels.value;
   };
 
+  // ---- SHOP ACTIONS (PLATFORM ADMIN) ----
+  const addShop = async (shopData, file, customId = null) => {
+    loading.value = true;
+    try {
+      const newShop = await addHotel(shopData, file, customId);
+      allHotels.value.push(newShop);
+      return newShop;
+    } catch (err) {
+      error.value = err.message;
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  const updateShop = async (hotelId, updates, file) => {
+    loading.value = true;
+    try {
+      await updateHotel(hotelId, updates, file);
+      const index = allHotels.value.findIndex(h => h.id === hotelId);
+      if (index !== -1) {
+        allHotels.value[index] = { ...allHotels.value[index], ...updates };
+      }
+      // Clear cache for this hotel
+      delete hotelCache.value[hotelId];
+      if (hotel.value && hotel.value.id === hotelId) {
+        hotel.value = { ...hotel.value, ...updates };
+      }
+    } catch (err) {
+      error.value = err.message;
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  const deleteShop = async (hotelId) => {
+    loading.value = true;
+    try {
+      await deleteHotel(hotelId);
+      allHotels.value = allHotels.value.filter(h => h.id !== hotelId);
+      delete hotelCache.value[hotelId];
+      if (hotel.value && hotel.value.id === hotelId) {
+        hotel.value = null;
+        menuItems.value = [];
+      }
+    } catch (err) {
+      error.value = err.message;
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  };
+
   const fetchHotelAndMenu = async (hotelId, force = false) => {
     const now = Date.now();
     const cached = hotelCache.value[hotelId];
     
-    // If we have valid cache (under 10 mins) and not forcing, use it
     if (!force && cached && (now - cached.timestamp < 10 * 60 * 1000)) {
        hotel.value = cached.data;
        menuItems.value = cached.menu;
        return;
     }
 
-    // Try to load from localStorage for immediate UI if cache is empty
     if (!cached) {
       const persisted = localStorage.getItem(`cache_hotel_${hotelId}`);
       if (persisted) {
@@ -77,7 +142,6 @@ export const useMenuStore = defineStore("menu", () => {
     loading.value = true;
     error.value = null;
     try {
-      // Parallel fetch for speed
       const [hotelData, items] = await Promise.all([
         loadHotel(hotelId),
         getMenuItems(hotelId)
@@ -86,14 +150,12 @@ export const useMenuStore = defineStore("menu", () => {
       hotel.value = hotelData;
       menuItems.value = items;
 
-      // Update Cache
       hotelCache.value[hotelId] = {
         data: hotelData,
         menu: items,
         timestamp: now
       };
 
-      // Persist for offline/refresh starting
       localStorage.setItem(`cache_hotel_${hotelId}`, JSON.stringify({ data: hotelData, menu: items }));
 
     } catch (err) {
@@ -109,7 +171,6 @@ export const useMenuStore = defineStore("menu", () => {
     try {
       const newItem = await addMenuItem(hotel.value.id, item, file);
       menuItems.value.push(newItem);
-      // Update cache
       if (hotelCache.value[hotel.value.id]) {
         hotelCache.value[hotel.value.id].menu = [...menuItems.value];
       }
@@ -154,8 +215,12 @@ export const useMenuStore = defineStore("menu", () => {
     loading,
     error,
     isAdmin,
+    isPlatformAdmin,
     fetchAllHotels,
     fetchHotelAndMenu,
+    addShop,
+    updateShop,
+    deleteShop,
     addItem,
     updateItem,
     deleteItem

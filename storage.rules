@@ -1,0 +1,26 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isPlatformAdmin() {
+      return isAuthenticated() && 
+             ('email' in request.auth.token) &&
+             (request.auth.token.email.lower() == 'merchantai@gmail.com' || 
+              request.auth.token.email.lower() == 'admin@merchantai.com');
+    }
+
+    match /hotels/{hotelId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if isPlatformAdmin();
+    }
+    
+    match /hotels/{hotelId}/menu/{allPaths=**} {
+       allow read: if true;
+       allow write: if isPlatformAdmin();
+    }
+  }
+}

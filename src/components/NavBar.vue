@@ -33,7 +33,7 @@ onMounted(() => {
       <div class="navbar__brand">
         <router-link to="/" class="brand-link">
             <div v-if="menuStore.hotel">
-                <img v-if="menuStore.hotel.logo" :src="menuStore.hotel.logo" :alt="menuStore.hotel.name" class="navbar__logo" />
+                <img v-if="menuStore.hotel.image || menuStore.hotel.logo" :src="menuStore.hotel.image || menuStore.hotel.logo" :alt="menuStore.hotel.name" class="navbar__logo" />
                 <h1 v-else>{{ menuStore.hotel.name }}</h1>
             </div>
             <h1 v-else>Pro Menu</h1>
