@@ -10,7 +10,9 @@ import {
   addHotel,
   updateHotel,
   deleteHotel,
-  isPlatformAdmin as apiIsPlatformAdmin
+  isPlatformAdmin as apiIsPlatformAdmin,
+  uploadOfferImage,
+  checkShopIdAvailable as apiCheckShopIdAvailable
 } from "../api";
 import { useUserStore } from "./user";
 
@@ -116,6 +118,57 @@ export const useMenuStore = defineStore("menu", () => {
     }
   };
 
+  const addOfferImage = async (file) => {
+    if (!hotel.value) return;
+    loading.value = true;
+    try {
+      // 1. Upload
+      const url = await uploadOfferImage(hotel.value.id, file);
+      
+      // 2. Update local state
+      const currentImages = hotel.value.offerImages || [];
+      const newImages = [...currentImages, url];
+      
+      // 3. Update Firestore
+      await updateHotel(hotel.value.id, { offerImages: newImages });
+      
+      // 4. Update store/cache (updateHotel logic already handles some of this but let's be explicit if needed)
+      // The updateHotel call above internally updates 'allHotels' if we used the store action, 
+      // but here we called the API directly? No, we should use the store action if possible or just update local state.
+      // Actually, let's just use the api updateHotel from inside this action? 
+      // Re-using store's updateShop might be cleaner but it takes a file for main image.
+      // Let's just manually update local state as we did.
+      
+      // Force update local hotel reference
+      hotel.value.offerImages = newImages; 
+      
+      return url;
+    } catch (err) {
+      error.value = err.message;
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  const removeOfferImage = async (url) => {
+    if (!hotel.value) return;
+    loading.value = true;
+    try {
+      const currentImages = hotel.value.offerImages || [];
+      const newImages = currentImages.filter(img => img !== url);
+      
+      await updateHotel(hotel.value.id, { offerImages: newImages });
+      
+      hotel.value.offerImages = newImages;
+    } catch (err) {
+      error.value = err.message;
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  };
+
   const fetchHotelAndMenu = async (hotelId, force = false) => {
     const now = Date.now();
     const cached = hotelCache.value[hotelId];
@@ -208,6 +261,15 @@ export const useMenuStore = defineStore("menu", () => {
     }
   };
 
+  const checkShopIdAvailable = async (shopId) => {
+    try {
+      return await apiCheckShopIdAvailable(shopId);
+    } catch (err) {
+      console.error("Check ID failed:", err);
+      return false; // Fail safe
+    }
+  };
+
   return {
     hotel,
     allHotels,
@@ -223,6 +285,9 @@ export const useMenuStore = defineStore("menu", () => {
     deleteShop,
     addItem,
     updateItem,
-    deleteItem
+    deleteItem,
+    addOfferImage,
+    removeOfferImage,
+    checkShopIdAvailable
   };
 });

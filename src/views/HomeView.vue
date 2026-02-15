@@ -5,6 +5,8 @@ import { useMenuStore } from '../stores/menu';
 import MenuItem from '../components/MenuItem.vue';
 import OrderSummary from '../components/OrderSummary.vue';
 import ItemDrawer from '../components/ItemDrawer.vue';
+import ManageOffersDrawer from '../components/ManageOffersDrawer.vue';
+import OfferCarousel from '../components/OfferCarousel.vue';
 
 import { getDiscoveryUrl } from '../utils/domain';
 import { logAnalyticsEvent } from '../api';
@@ -30,6 +32,18 @@ watch(() => menuStore.hotel, (hotel) => {
 const selectedItem = ref(null);
 const searchQuery = ref('');
 const collapsedCategories = ref({});
+const showManageOffers = ref(false);
+const showOfferCarousel = ref(false);
+
+// Auto-show offers on load if present
+onMounted(() => {
+  // Simple check: if offers exist, show them. 
+  // In a real app we might check a cookie to not annoy users every refresh,
+  // but for this MVP, auto-show is good.
+  if (menuStore.hotel?.offerImages?.length > 0) {
+    showOfferCarousel.value = true;
+  }
+});
 
 // Search and Filter Logic
 const filteredMenuItems = computed(() => {
@@ -134,8 +148,21 @@ const handleDelete = async (itemId) => {
               class="search-input"
             />
           </div>
-          <div v-if="menuStore.isAdmin" class="admin-actions">
-            <button @click="openAddPage" class="btn btn--primary">+ Add Item</button>
+          
+          <div class="header-actions">
+            <!-- Customer Offer Button -->
+            <button 
+              v-if="menuStore.hotel?.offerImages?.length > 0" 
+              @click="showOfferCarousel = true"
+              class="btn btn--small btn--outline-primary mr-2"
+            >
+              🎉 Offers
+            </button>
+
+            <div v-if="menuStore.isAdmin" class="admin-actions">
+              <button @click="showManageOffers = true" class="btn btn--primary">Manage Offers</button>
+              <button @click="openAddPage" class="btn btn--primary">+ Add Item</button>
+            </div>
           </div>
         </div>
 
@@ -178,6 +205,17 @@ const handleDelete = async (itemId) => {
         :isOpen="!!selectedItem" 
         :item="selectedItem" 
         @close="selectedItem = null" 
+    />
+
+    <ManageOffersDrawer 
+      :isOpen="showManageOffers"
+      @close="showManageOffers = false"
+    />
+
+    <OfferCarousel 
+      :isOpen="showOfferCarousel"
+      :images="menuStore.hotel?.offerImages || []"
+      @close="showOfferCarousel = false"
     />
   </div>
 </template>
@@ -230,7 +268,8 @@ const handleDelete = async (itemId) => {
 }
 
 .admin-actions {
-  text-align: right;
+  display: flex;
+  gap: 1rem;
 }
 
 .menu-header {
@@ -321,5 +360,23 @@ const handleDelete = async (itemId) => {
   flex-direction: column;
   gap: 0.75rem;
   padding: 0.25rem 0 1rem 0.5rem;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+}
+
+.mr-2 { margin-right: 0.5rem; }
+
+.btn--outline-primary {
+  background: transparent;
+  border: 1px solid var(--primary-color);
+  color: var(--primary-color);
+}
+
+.btn--outline-primary:hover {
+  background: var(--primary-color);
+  color: white;
 }
 </style>

@@ -141,6 +141,13 @@ export async function addHotel(hotel, file, customId = null) {
   return { id: newDoc.id, ...hotel };
 }
 
+export async function checkShopIdAvailable(shopId) {
+  if (!shopId) return false;
+  const hotelRef = doc(db, "hotels", shopId);
+  const snap = await getDoc(hotelRef);
+  return !snap.exists();
+}
+
 export async function updateHotel(hotelId, updates, file) {
   const hotelRef = doc(db, "hotels", hotelId);
   if (file) {
@@ -171,6 +178,15 @@ export async function uploadMenuItemImage(hotelId, file) {
   if (!file) throw new Error("No file provided");
 
   const imageRef = ref(storage, `hotels/${hotelId}/menu/${file.name}`);
+  await uploadBytes(imageRef, file);
+  return await getDownloadURL(imageRef);
+}
+
+export async function uploadOfferImage(hotelId, file) {
+  if (!file) throw new Error("No file provided");
+  // Timestamp to avoid name collisions/caching issues
+  const timestamp = Date.now();
+  const imageRef = ref(storage, `hotels/${hotelId}/offers/${timestamp}_${file.name}`);
   await uploadBytes(imageRef, file);
   return await getDownloadURL(imageRef);
 }

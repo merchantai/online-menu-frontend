@@ -2,6 +2,7 @@
 import { ref, onMounted, computed, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useMenuStore } from '../stores/menu';
+import { checkShopIdAvailable } from '../api';
 import { compressImage } from '../utils/image';
 
 const route = useRoute();
@@ -47,6 +48,35 @@ const imageFile = ref(null);
 const imagePreview = ref(null);
 const isCompressing = ref(false);
 const isSaving = ref(false);
+const shopIdError = ref('');
+const isCheckingId = ref(false);
+
+const validateShopId = async () => {
+  if (isEdit.value) return; // No validation needed for edit mode (ID can't simplify change)
+  const id = formData.value.shopId;
+  shopIdError.value = '';
+  
+  if (!id) return;
+  
+  // Basic regex check first
+  const idRegex = /^[a-z0-9\-]+$/;
+  if (!idRegex.test(id)) {
+    shopIdError.value = "Shop ID must be lowercase alphanumeric with hyphens only.";
+    return;
+  }
+  
+  try {
+    isCheckingId.value = true;
+    const isAvailable = await checkShopIdAvailable(id);
+    if (!isAvailable) {
+      shopIdError.value = "This Shop ID is already taken. Please choose another.";
+    }
+  } catch (error) {
+    console.error("Failed to check ID availability:", error);
+  } finally {
+    isCheckingId.value = false;
+  }
+};
 
 const init = async () => {
   if (isEdit.value) {
@@ -210,7 +240,7 @@ const openMapPicker = () => {
         <!-- Shop ID (Only on Add) -->
         <div class="form-group">
           <label>Shop ID (Unique Permalink)</label>
-          <div class="input-with-prefix">
+            <div class="input-with-prefix">
             <span class="prefix">promenu.in/</span>
             <input 
               v-model="formData.shopId" 
@@ -218,10 +248,14 @@ const openMapPicker = () => {
               required 
               class="form-input" 
               placeholder="e.g. grand-plaza" 
+              @blur="validateShopId"
+              @input="shopIdError = ''"
             />
+            <span v-if="isCheckingId" class="input-spinner">⏳</span>
           </div>
-          <p class="help-text" v-if="!isEdit">This will be the URL of your shop. <strong>Cannot be changed later.</strong></p>
-          <p class="help-text" v-else>ID cannot be modified after creation.</p>
+          <p class="error-text" v-if="shopIdError">{{ shopIdError }}</p>
+          <p class="help-text" v-if="!isEdit && !shopIdError">This will be the URL of your shop. <strong>Cannot be changed later.</strong></p>
+          <p class="help-text" v-else-if="isEdit">ID cannot be modified after creation.</p>
         </div>
 
         <!-- Basic Info -->
@@ -319,7 +353,7 @@ const openMapPicker = () => {
 
         <div class="form-actions mt-2">
           <button type="button" @click="router.back()" class="btn btn--secondary">Cancel</button>
-          <button type="submit" class="btn btn--primary" :disabled="isSaving || isCompressing">
+          <button type="submit" class="btn btn--primary" :disabled="isSaving || isCompressing || !!shopIdError">
             {{ isSaving ? 'Saving...' : (isEdit ? 'Update Shop' : 'Create Shop') }}
           </button>
         </div>
@@ -429,5 +463,22 @@ const openMapPicker = () => {
     flex-direction: column;
     gap: 0;
   }
+}
+
+.error-text {
+  color: #dc2626;
+  font-size: 0.85rem;
+  margin-top: 0.25rem;
+  font-weight: 500;
+}
+
+.input-spinner {
+  padding: 0 0.5rem;
+  animation: rotate 1s linear infinite;
+}
+
+@keyframes rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 </style>
